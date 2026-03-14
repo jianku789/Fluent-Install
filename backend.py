@@ -24,7 +24,7 @@ from typing import Tuple, Any, List, Dict, Literal
 from urllib.parse import quote
 
 CURRENT_VERSION = "2.5"  # 当前版本号
-GITHUB_REPO = "pvzcxw/Cai-install-Web-GUI" 
+GITHUB_REPO = "zhouchentao666/Cai-install-Fluent-GUI" 
 
 # --- LOGGING SETUP ---
 LOG_FORMAT = '%(log_color)s%(message)s'
@@ -388,33 +388,37 @@ class CaiBackend:
     # --- NEW: File Manager Methods ---
 
     async def _fetch_game_name_for_manager(self, appid: str) -> str:
-        """为文件管理器异步获取游戏名称，并使用缓存。现在使用小黑盒API。"""
+        """为文件管理器异步获取游戏名称，并使用缓存。现在使用Steam官方API。"""
         if not appid or not appid.isdigit():
             return "无效AppID"
         if appid in self.name_cache:
             return self.name_cache[appid]
 
-        url = f"https://api.xiaoheihe.cn/game/share_game_detail?appid={appid}"
+        # 使用Steam官方API获取游戏详情
+        api_urls = [
+            f"https://store.steampowered.com/api/appdetails?appids={appid}&l=schinese",
+            f"https://store.steampowered.com/api/appdetails?appids={appid}&l=english",
+            f"https://store.steampowered.com/api/appdetails?appids={appid}"
+        ]
+        
         try:
-            # 使用现有client
-            response = await self.client.get(url, headers={'User-Agent': 'Cai-Install-Manager/1.0'})
-            response.raise_for_status()
-            html_content = response.text
-            
-            # 使用正则表达式从HTML中提取<title>标签的内容
-            title_match = re.search(r'<title>(.*?)</title>', html_content, re.IGNORECASE)
-            
-            if title_match:
-                name = title_match.group(1).strip()
-                # 小黑盒的标题可能包含 "-小黑盒" 后缀，需要移除
-                if " - 小黑盒" in name:
-                    name = name.replace(" - 小黑盒", "").strip()
-                self.name_cache[appid] = name
-                return name
-            
+            for api_url in api_urls:
+                response = await self.client.get(api_url, headers={'User-Agent': 'Cai-Install-Manager/1.0'})
+                if response.status_code != 200:
+                    continue
+                    
+                data = response.json()
+                app_data = data.get(str(appid), {})
+                
+                if app_data.get("success") and "data" in app_data:
+                    game_name = app_data["data"].get("name", "")
+                    if game_name:
+                        self.name_cache[appid] = game_name
+                        return game_name
+                        
             return "名称未找到"
         except Exception as e:
-            self.log.warning(f"从小黑盒获取 AppID {appid} 的名称失败: {e}")
+            self.log.warning(f"从Steam官方API获取 AppID {appid} 的名称失败: {e}")
             return "获取失败"
             
     async def get_managed_files(self) -> Dict:
@@ -2387,47 +2391,76 @@ class CaiBackend:
         try:
             self.log.info(f"正在尝试搜索游戏: {game_name}")
             
-            # Steam API URL
-            url = "https://steamcommunity.com/actions/SearchApps"
+            # 使用Steam官方API获取所有游戏列表
+            url = "https://api.steampowered.com/IStoreService/GetAppList/v1/"
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
             }
             
-            # 发送请求
-            r = await self.client.get(url, params={'term': game_name}, headers=headers, timeout=20)
+            # 发送请求获取所有游戏列表
+            all_games = []
+            last_appid = 0
+            max_apps = 50000  # 限制最大获取数量避免超时
             
-            if r.status_code == 403:
-                self.log.warning("API请求被拦截 (403 Forbidden)，可能是API鉴权失败或WAF拦截。")
-                return []
+            while len(all_games) < max_apps:
+                params = {
+                    'include_games': 'true',
+                    'include_dlc': 'false',
+                    'include_software': 'false',
+                    'include_videos': 'false',
+                    'include_hardware': 'false',
+                    'last_appid': last_appid,
+                    'max_results': 1000  # 每次获取1000个应用
+                }
+                
+                r = await self.client.get(url, params=params, headers=headers, timeout=30)
+                
+                if r.status_code != 200:
+                    self.log.warning(f"API请求失败，状态码: {r.status_code}")
+                    break
+                
+                resp_json = r.json()
+                
+                if 'response' not in resp_json or 'apps' not in resp_json['response']:
+                    self.log.warning("API响应格式不正确")
+                    break
+                
+                apps = resp_json['response']['apps']
+                if not apps:
+                    break
+                
+                all_games.extend(apps)
+                last_appid = apps[-1]['appid']
+                
+                # 如果获取的数量少于请求的数量，说明已经获取完毕
+                if len(apps) < 1000:
+                    break
             
-            r.raise_for_status()
+            self.log.info(f"成功获取到 {len(all_games)} 个游戏")
             
-            resp_json = r.json()
-            
-            # 解析 API 返回结构: {"status": "ok", "data": [{"appid":..., "name":...}, ...]}
-            raw_data = []
-            if isinstance(resp_json, dict):
-                # 检查状态或直接获取data
-                if resp_json.get("status") == "ok" or "data" in resp_json:
-                    raw_data = resp_json.get("data", [])
-            
+            # 搜索匹配的游戏
             games_list = []
-            if isinstance(raw_data, list):
-                for item in raw_data:
-                    appid = item.get('appid')
-                    name = item.get('name')
-                    image = item.get('image')
-                    
-                    if appid and name:
-                        # 兼容 Web GUI 前端，将 image 映射为 header_image
+            search_term = game_name.lower()
+            
+            for game in all_games:
+                appid = str(game.get('appid', ''))
+                name = game.get('name', '')
+                
+                if appid and name:
+                    # 模糊匹配游戏名称
+                    if search_term in name.lower():
                         games_list.append({
-                            'appid': str(appid),
+                            'appid': appid,
                             'name': name,
-                            'header_image': image
+                            'header_image': f"https://cdn.cloudflare.steamstatic.com/steam/apps/{appid}/header.jpg"
                         })
-
+                        
+                        # 限制返回结果数量
+                        if len(games_list) >= 20:
+                            break
+            
             if games_list:
-                self.log.info(f"成功找到 {len(games_list)} 个结果")
+                self.log.info(f"成功找到 {len(games_list)} 个匹配结果")
                 return games_list
             else:
                 self.log.warning("未找到相关游戏。")

@@ -18,11 +18,12 @@ from qfluentwidgets import (
     ComboBox, SwitchButton, ProgressRing, InfoBar,
     InfoBarPosition, CardWidget, ScrollArea, CaptionLabel,
     TransparentToolButton, IconWidget, FlowLayout, SearchLineEdit,
-    PrimaryPushButton, CheckBox
+    PrimaryPushButton, CheckBox, GroupHeaderCardWidget, InfoBarIcon
 )
 
 # 导入后端
 from backend import CaiBackend
+
 
 
 # 语言配置
@@ -71,7 +72,7 @@ def load_language_config():
 # Simple text translation mapping
 TEXTS = {
     "zh_CN": {
-        "app_title": "Cai Install - Fluent",
+        "app_title": "流畅入库",
         "home": "主页",
         "search": "搜索入库",
         "settings": "设置",
@@ -95,7 +96,10 @@ TEXTS = {
         "manifest_source": "清单源:",
         "add_game": "入库游戏",
         "steam_path": "Steam 路径",
+        "steam_path_hint": "选择Steam安装路径，留空则自动检测",
         "github_token": "GitHub Personal Token",
+        "github_token_hint": "可选，用于提高API请求限制",
+        "basic_settings": "基本设置",
         "appearance": "外观",
         "theme_mode": "主题模式",
         "theme_color": "主题色",
@@ -123,14 +127,23 @@ TEXTS = {
         "restart_error_message": "重启 Steam 时出错: {0}",
         "application_config": "应用程序配置",
         "debug_mode": "调试模式",
+        "debug_mode_hint": "启用详细的调试日志输出",
         "enable_debug_log": "启用详细的调试日志输出",
         "save_log_files": "保存日志文件",
         "save_logs_to_file": "将日志保存到文件中",
+        "save_log_files_hint": "将日志保存到文件中",
         "unlocker_mode": "解锁工具模式",
         "auto_detect": "自动检测",
         "force_steamtools": "强制 SteamTools",
         "force_greenluma": "强制 GreenLuma",
         "force_unlocker_hint": "强制使用指定的解锁工具",
+        "theme_mode_hint": "选择应用主题模式",
+        "theme_color_hint": "选择主题颜色",
+        "language_hint": "选择应用语言",
+        "window_effect": "窗口特效",
+        "window_effect_hint": "选择窗口背景特效",
+        "effect_none": "无特效",
+        "effect_mica": "云母",
         "light_theme": "浅色",
         "dark_theme": "深色",
         "follow_system": "跟随系统",
@@ -154,11 +167,39 @@ TEXTS = {
         "github_sac": "GitHub (SAC)",
         "restart_steam_title": "重启 Steam",
         "restart_steam_confirm_message": "确定要重启 Steam 吗？\n\n这将关闭当前运行的 Steam 并重新启动。",
+        
+        # 缺失的翻译键
+        "tip": "提示",
+        "recognition_success": "识别成功",
+        "game_not_found": "未找到匹配的游戏",
+        "check_game_name": "请检查游戏名称或尝试使用 AppID",
+        "game_found": "找到游戏",
+        "search_failed": "搜索失败",
+        "add_success": "入库成功",
+        "add_success_content": "AppID {0} 已成功入库，重启 Steam 后生效",
+        "process_failed": "处理失败",
+        "check_logs": "请查看日志",
+        "check_details": "处理失败，请查看详细信息或尝试其他清单源",
+        "auto_detect_placeholder": "留空则自动检测",
+        "token_placeholder": "可选，用于提高 API 请求限制",
+        "load_config_failed": "加载配置失败",
+        "save_success": "保存成功",
+        "save_success_content": "配置已保存",
+        "save_failed": "保存失败",
+        "unknown_error": "未知错误",
+        "data_process_failed": "处理数据失败",
+        "please_wait": "Please wait",
+        "unknown_game": "未知游戏",
+        "reset_to_default": "重置为默认",
+        "about_title": "关于",
+        "thanks_title": "鸣谢",
+        "about_text": "Cai Install - Fluent Design 版本\n\n版本: 1.0.0\n\n这是一个基于 PyQt6-Fluent-Widgets 的现代化 Steam 游戏解锁工具。\n\n功能特性:\n• Fluent Design 设计风格\n• 支持多种清单源\n• 游戏搜索和入库\n• 已入库游戏管理\n• 主题自定义\n\n项目地址: https://github.com/zhouchentao666/Cai-install-Fluent-GUI",
+        "thanks_text": "特别鸣谢\n\n开发者:\n• zhouchentao666 - 制作人员\n\n开源项目:\n• PyQt6 - Qt6 Python 绑定\n• PyQt-Fluent-Widgets - Fluent Design 组件库\n• Cai-install-Web-GUI - 原始项目作者\n• httpx - 异步 HTTP 客户端\n\n清单源提供:\n• SWA V2\n• Cysaw\n• Furcate\n• Walftech\n• steamdatabase\n• SteamAutoCracks\n• Sudama\n• 清单不求人\n\n感谢所有为本项目做出贡献的开发者和用户！",
     },
     "en_US": {
-        "app_title": "Cai Install - Fluent",
+        "app_title": "FluentInstall",
         "home": "Home",
-        "search": "Search & Add",
+        "search": "Search",
         "settings": "Settings",
         "restart_steam": "Restart Steam",
         "installed_games": "Installed Games",
@@ -219,6 +260,10 @@ TEXTS = {
         "light_theme": "Light",
         "dark_theme": "Dark",
         "follow_system": "Follow System",
+        "window_effect": "Window Effect",
+        "window_effect_hint": "Select window background effect",
+        "effect_none": "None",
+        "effect_mica": "Mica",
         "default_blue": "Default Blue (#0078d4)",
         "purple": "Purple (#9b4dca)",
         "green": "Green (#10893e)",
@@ -226,7 +271,7 @@ TEXTS = {
         "red": "Red (#e81123)",
         "pink": "Pink (#e3008c)",
         "tip_source_fail": "Tip: If one source fails, try another",
-        "auto_search_github": "Auto Search GitHub (Recommended)",
+        "auto_search_github": "Auto Search GitHub",
         "swa_v2": "SWA V2",
         "cysaw": "Cysaw",
         "furcate": "Furcate",
@@ -239,6 +284,34 @@ TEXTS = {
         "github_sac": "GitHub (SAC)",
         "restart_steam_title": "Restart Steam",
         "restart_steam_confirm_message": "Are you sure you want to restart Steam?\n\nThis will close the currently running Steam and restart it.",
+        
+        # 缺失的翻译键
+        "tip": "Tip",
+        "recognition_success": "Recognition Success",
+        "game_not_found": "Game not found",
+        "check_game_name": "Please check the game name or try using AppID",
+        "game_found": "Game Found",
+        "search_failed": "Search Failed",
+        "add_success": "Add Success",
+        "add_success_content": "AppID {0} has been successfully added, restart Steam to take effect",
+        "process_failed": "Process Failed",
+        "check_logs": "Please check logs",
+        "check_details": "Process failed, please check details or try other sources",
+        "auto_detect_placeholder": "Leave empty for auto detection",
+        "token_placeholder": "Optional, for increasing API request limits",
+        "load_config_failed": "Load config failed",
+        "save_success": "Save Success",
+        "save_success_content": "Configuration saved",
+        "save_failed": "Save Failed",
+        "unknown_error": "Unknown error",
+        "data_process_failed": "Data processing failed",
+        "please_wait": "Please wait",
+        "unknown_game": "Unknown game",
+        "reset_to_default": "Reset Default",
+        "about_title": "About",
+        "thanks_title": "Credits",
+        "about_text": "Cai Install - Fluent Design Version\n\nVersion: 1.0.0\n\nThis is a modern Steam game unlocking tool based on PyQt6-Fluent-Widgets.\n\nFeatures:\n• Fluent Design style\n• Support for multiple manifest sources\n• Game search and adding\n• Installed games management\n• Theme customization\n\nProject URL: https://github.com/zhouchentao666/Cai-install-Fluent-GUI",
+        "thanks_text": "Special Thanks\n\nDevelopers:\n• zhouchentao666 - Developer\n\nOpen Source Projects:\n• PyQt6 - Qt6 Python Bindings\n• PyQt-Fluent-Widgets - Fluent Design Component Library\n• Cai-install-Web-GUI - Original Project Author\n• httpx - Async HTTP Client\n\nManifest Sources:\n• SWA V2\n• Cysaw\n• Furcate\n• Walftech\n• steamdatabase\n• SteamAutoCracks\n• Sudama\n• Manifest Helper Library\n\nThanks to all developers and users who contributed to this project!",
     }
 }
 
@@ -353,16 +426,34 @@ class AsyncWorker(QThread):
     def __init__(self, coro):
         super().__init__()
         self.coro = coro
+        self._loop = None
     
     def run(self):
         try:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            result = loop.run_until_complete(self.coro)
-            loop.close()
+            self._loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(self._loop)
+            result = self._loop.run_until_complete(self.coro)
             self.finished.emit(result)
         except Exception as e:
             self.error.emit(str(e))
+        finally:
+            # 确保正确清理事件循环
+            if self._loop:
+                try:
+                    # 取消所有pending任务
+                    pending = asyncio.all_tasks(self._loop) if hasattr(asyncio, 'all_tasks') else []
+                    if pending:
+                        for task in pending:
+                            task.cancel()
+                        self._loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+                    
+                    # 关闭事件循环
+                    if not self._loop.is_closed():
+                        self._loop.close()
+                except Exception:
+                    pass
+                finally:
+                    self._loop = None
 
 class HomePage(ScrollArea):
     """已入库的游戏页面（主页）"""
@@ -472,7 +563,7 @@ class HomePage(ScrollArea):
             self.display_games(self.all_games_data)
                 
         except Exception as e:
-            self.stats_label.setText(f"处理数据失败: {str(e)}")
+            self.stats_label.setText(f"{tr('data_process_failed')}: {str(e)}")
     
     def display_games(self, games_data):
         """显示游戏列表"""
@@ -484,7 +575,7 @@ class HomePage(ScrollArea):
         # 添加卡片
         for source_type, game in games_data:
             appid = game.get('appid', 'N/A')
-            game_name = game.get('game_name', '未知游戏')
+            game_name = game.get('game_name', tr('unknown_game'))
             
             card = GameCard(appid, game_name, source_type, self)
             self.card_layout.addWidget(card)
@@ -573,7 +664,7 @@ class HomePage(ScrollArea):
         else:
             InfoBar.error(
                 title=tr("delete_failed"),
-                content=result.get('message', '未知错误'),
+                content=result.get('message', tr('unknown_error')),
                 parent=self,
                 position=InfoBarPosition.TOP
             )
@@ -733,7 +824,7 @@ class SearchPage(ScrollArea):
         query = self.search_input.text().strip()
         if not query:
             InfoBar.warning(
-                title="提示",
+                title=tr("tip"),
                 content=tr("game_name_or_appid"),
                 parent=self,
                 position=InfoBarPosition.TOP
@@ -775,10 +866,10 @@ class SearchPage(ScrollArea):
             # 直接是 AppID
             self.current_appid = result['appid']
             self.unlock_button.setEnabled(True)
-            self.result_label.setText(f"✓ 识别成功\nAppID: {self.current_appid}\n\n点击「入库游戏」按钮继续")
+            self.result_label.setText(f"✓ {tr('recognition_success')}\nAppID: {self.current_appid}\n\n点击「入库游戏」按钮继续")
             
             InfoBar.success(
-                title="识别成功",
+                title=tr("recognition_success"),
                 content=f"AppID: {self.current_appid}",
                 parent=self,
                 position=InfoBarPosition.TOP
@@ -787,10 +878,10 @@ class SearchPage(ScrollArea):
             # 搜索结果
             results = result['results']
             if not results:
-                self.result_label.setText("✗ 未找到匹配的游戏\n请检查游戏名称或尝试使用 AppID")
+                self.result_label.setText(f"✗ {tr('game_not_found')}\n{tr('check_game_name')}")
                 InfoBar.warning(
-                    title="未找到",
-                    content="未找到匹配的游戏",
+                    title=tr("game_not_found"),
+                    content=tr("game_not_found"),
                     parent=self,
                     position=InfoBarPosition.TOP
                 )
@@ -801,14 +892,14 @@ class SearchPage(ScrollArea):
             self.current_appid = first['appid']
             self.unlock_button.setEnabled(True)
             
-            result_text = f"✓ 找到游戏\n\n游戏名称: {first['name']}\nAppID: {first['appid']}\n\n点击「入库游戏」按钮继续"
+            result_text = f"✓ {tr('game_found')}\n\n游戏名称: {first['name']}\nAppID: {first['appid']}\n\n点击「入库游戏」按钮继续"
             if len(results) > 1:
-                result_text += f"\n\n提示: 找到 {len(results)} 个结果，已选择第一个"
+                result_text += f"\n\n{tr('tip')}: 找到 {len(results)} 个结果，已选择第一个"
             
             self.result_label.setText(result_text)
             
             InfoBar.success(
-                title="找到游戏",
+                title=tr("game_found"),
                 content=f"{first['name']} (AppID: {first['appid']})",
                 parent=self,
                 position=InfoBarPosition.TOP,
@@ -820,9 +911,9 @@ class SearchPage(ScrollArea):
         """搜索失败"""
         self.progress_ring.hide()
         self.search_button.setEnabled(True)
-        self.result_label.setText(f"✗ 搜索失败\n{error}")
+        self.result_label.setText(f"✗ {tr('search_failed')}\n{error}")
         InfoBar.error(
-            title="搜索失败",
+            title=tr("search_failed"),
             content=error,
             parent=self,
             position=InfoBarPosition.TOP
@@ -857,7 +948,7 @@ class SearchPage(ScrollArea):
         self.progress_ring.show()
         self.unlock_button.setEnabled(False)
         self.search_button.setEnabled(False)
-        self.result_label.setText(f"{tr('loading')} AppID {self.current_appid}...\nPlease wait")
+        self.result_label.setText(f"{tr('loading')} AppID {self.current_appid}...\n{tr('please_wait')}")
         
         async def _unlock():
             async with CaiBackend() as backend:
@@ -905,19 +996,19 @@ class SearchPage(ScrollArea):
         self.search_button.setEnabled(True)
         
         if success:
-            self.result_label.setText(f"✓ 入库成功！\n\nAppID {self.current_appid} 已成功入库\n请重启 Steam 使更改生效")
+            self.result_label.setText(f"✓ {tr('add_success')}!\n\nAppID {self.current_appid} {tr('add_success').lower()}\n请重启 Steam 使更改生效")
             InfoBar.success(
-                title="入库成功",
-                content=f"AppID {self.current_appid} 已成功入库，重启 Steam 后生效",
+                title=tr("add_success"),
+                content=tr("add_success_content").format(self.current_appid),
                 parent=self,
                 position=InfoBarPosition.TOP,
                 duration=3000
             )
         else:
-            self.result_label.setText(f"✗ 入库失败\n处理失败，请查看日志")
+            self.result_label.setText(f"✗ {tr('delete_failed')}\n{tr('process_failed')}，{tr('check_logs')}")
             InfoBar.error(
-                title="入库失败",
-                content="处理失败，请查看日志",
+                title=tr("delete_failed"),
+                content=tr("process_failed") + "，" + tr("check_logs"),
                 parent=self,
                 position=InfoBarPosition.TOP
             )
@@ -939,15 +1030,37 @@ class SearchPage(ScrollArea):
         else:
             error_msg = error
         
-        self.result_label.setText(f"✗ 入库失败\n\n{error_msg}")
+        self.result_label.setText(f"✗ {tr('delete_failed')}\n\n{error_msg}")
         
         InfoBar.error(
-            title="入库失败",
-            content="处理失败，请查看详细信息或尝试其他清单源",
+            title=tr("delete_failed"),
+            content=tr("check_details"),
             parent=self,
             position=InfoBarPosition.TOP,
             duration=5000
         )
+
+
+class SettinsCard(GroupHeaderCardWidget):
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setTitle(tr("basic_settings"))
+        self.setBorderRadius(8)
+
+        # Steam路径设置
+        self.steam_path_edit = LineEdit()
+        self.steam_path_edit.setPlaceholderText(tr("auto_detect_placeholder"))
+        self.steam_path_edit.setFixedWidth(320)
+        
+        # GitHub Token设置
+        self.token_edit = LineEdit()
+        self.token_edit.setPlaceholderText(tr("token_placeholder"))
+        self.token_edit.setFixedWidth(320)
+
+        # 添加组件到分组中
+        self.addGroup(FluentIcon.FOLDER, tr("steam_path"), tr("steam_path_hint"), self.steam_path_edit)
+        self.addGroup(FluentIcon.GITHUB, tr("github_token"), tr("github_token_hint"), self.token_edit)
 
 
 class SettingsPage(ScrollArea):
@@ -971,158 +1084,23 @@ class SettingsPage(ScrollArea):
         title = SubtitleLabel(tr("settings"), self)
         layout.addWidget(title)
         
-        # Steam 路径设置
-        steam_card = CardWidget(self)
-        steam_layout = QVBoxLayout(steam_card)
-        steam_layout.setContentsMargins(20, 20, 20, 20)
-        steam_layout.setSpacing(10)
+        # 使用新的分组卡片布局
+        settings_card = SettinsCard(self)
+        layout.addWidget(settings_card)
         
-        steam_label = BodyLabel(tr("steam_path"), self)
-        steam_layout.addWidget(steam_label)
+        # 保存对控件的引用以便后续使用
+        self.steam_path_edit = settings_card.steam_path_edit
+        self.token_edit = settings_card.token_edit
+        self.debug_check = None
+        self.logging_check = None
+        self.unlocker_combo = None
+        self.theme_combo = None
+        self.color_combo = None
+        self.lang_combo = None
+        self.effect_combo = None
         
-        self.steam_path_edit = LineEdit(self)
-        self.steam_path_edit.setPlaceholderText("留空则自动检测")
-        steam_layout.addWidget(self.steam_path_edit)
-        
-        layout.addWidget(steam_card)
-        
-        # GitHub Token 设置
-        token_card = CardWidget(self)
-        token_layout = QVBoxLayout(token_card)
-        token_layout.setContentsMargins(20, 20, 20, 20)
-        token_layout.setSpacing(10)
-        
-        token_label = BodyLabel(tr("github_token"), self)
-        token_layout.addWidget(token_label)
-        
-        self.token_edit = LineEdit(self)
-        self.token_edit.setPlaceholderText("可选，用于提高 API 请求限制")
-        token_layout.addWidget(self.token_edit)
-        
-        layout.addWidget(token_card)
-        
-        # 应用程序配置
-        app_config_card = CardWidget(self)
-        app_config_layout = QVBoxLayout(app_config_card)
-        app_config_layout.setContentsMargins(20, 20, 20, 20)
-        app_config_layout.setSpacing(15)
-        
-        app_config_label = BodyLabel(tr("application_config"), self)
-        app_config_layout.addWidget(app_config_label)
-        
-        # 调试模式
-        debug_row = QHBoxLayout()
-        debug_row.addWidget(BodyLabel(tr("debug_mode"), self))
-        self.debug_check = CheckBox(tr("enable_debug_log"), self)
-        debug_row.addWidget(self.debug_check)
-        debug_row.addStretch(1)
-        app_config_layout.addLayout(debug_row)
-        
-        # 保存日志文件
-        logging_row = QHBoxLayout()
-        logging_row.addWidget(BodyLabel(tr("save_log_files"), self))
-        self.logging_check = CheckBox(tr("save_logs_to_file"), self)
-        logging_row.addWidget(self.logging_check)
-        logging_row.addStretch(1)
-        app_config_layout.addLayout(logging_row)
-        
-        # 强制解锁工具模式
-        unlocker_row = QHBoxLayout()
-        unlocker_row.addWidget(BodyLabel(tr("unlocker_mode"), self))
-        self.unlocker_combo = ComboBox(self)
-        self.unlocker_combo.addItems([tr("auto_detect"), tr("force_steamtools"), tr("force_greenluma")])
-        self.unlocker_combo.setCurrentIndex(0)
-        self.unlocker_combo.setFixedWidth(180)
-        unlocker_row.addWidget(self.unlocker_combo)
-        unlocker_hint = CaptionLabel(tr("force_unlocker_hint"), self)
-        unlocker_hint.setTextColor("#606060", "#d2d2d2")
-        unlocker_row.addWidget(unlocker_hint)
-        unlocker_row.addStretch(1)
-        app_config_layout.addLayout(unlocker_row)
-        
-        layout.addWidget(app_config_card)
-        
-        # 外观设置
-        appearance_card = CardWidget(self)
-        appearance_layout = QVBoxLayout(appearance_card)
-        appearance_layout.setContentsMargins(20, 20, 20, 20)
-        appearance_layout.setSpacing(15)
-        
-        appearance_label = BodyLabel(tr("appearance"), self)
-        appearance_layout.addWidget(appearance_label)
-        
-        # 主题模式
-        theme_row = QHBoxLayout()
-        theme_row.addWidget(BodyLabel(tr("theme_mode"), self))
-        self.theme_combo = ComboBox(self)
-        self.theme_combo.addItems([tr("light_theme"), tr("dark_theme"), tr("follow_system")])
-        self.theme_combo.setCurrentIndex(2 if not isDarkTheme() else 1)
-        self.theme_combo.currentIndexChanged.connect(self.on_theme_mode_changed)
-        self.theme_combo.setFixedWidth(150)
-        theme_row.addWidget(self.theme_combo)
-        theme_row.addStretch(1)
-        appearance_layout.addLayout(theme_row)
-        
-        # 主题色
-        color_row = QHBoxLayout()
-        color_row.addWidget(BodyLabel(tr("theme_color"), self))
-        self.color_combo = ComboBox(self)
-        self.color_combo.addItems([
-            tr("default_blue"),
-            tr("purple"),
-            tr("green"),
-            tr("orange"),
-            tr("red"),
-            tr("pink")
-        ])
-        self.color_combo.currentIndexChanged.connect(self.on_theme_color_changed)
-        self.color_combo.setFixedWidth(200)
-        color_row.addWidget(self.color_combo)
-        color_row.addStretch(1)
-        appearance_layout.addLayout(color_row)
-        
-        # 语言
-        lang_row = QHBoxLayout()
-        lang_row.addWidget(BodyLabel(tr("language"), self))
-        self.lang_combo = ComboBox(self)
-        self.lang_combo.addItems(["简体中文", "English"])
-        self.lang_combo.setCurrentIndex(0)
-        self.lang_combo.currentIndexChanged.connect(self.on_language_changed)
-        self.lang_combo.setFixedWidth(150)
-        lang_row.addWidget(self.lang_combo)
-        lang_hint = CaptionLabel("(需要重启应用)", self)
-        lang_hint.setTextColor("#606060", "#d2d2d2")
-        lang_row.addWidget(lang_hint)
-        lang_row.addStretch(1)
-        appearance_layout.addLayout(lang_row)
-        
-        layout.addWidget(appearance_card)
-        
-        # 按钮行
-        button_layout = QHBoxLayout()
-        
-        self.save_btn = PrimaryPushButton(tr("save_settings"), self)
-        self.save_btn.clicked.connect(self.save_settings)
-        self.save_btn.setFixedWidth(120)
-        button_layout.addWidget(self.save_btn)
-        
-        self.reset_btn = PushButton("重置为默认", self)
-        self.reset_btn.clicked.connect(self.reset_settings)
-        self.reset_btn.setFixedWidth(120)
-        button_layout.addWidget(self.reset_btn)
-        
-        self.about_btn = PushButton(tr("about"), self)
-        self.about_btn.clicked.connect(self.show_about)
-        self.about_btn.setFixedWidth(100)
-        button_layout.addWidget(self.about_btn)
-        
-        self.thanks_btn = PushButton(tr("thanks"), self)
-        self.thanks_btn.clicked.connect(self.show_thanks)
-        self.thanks_btn.setFixedWidth(100)
-        button_layout.addWidget(self.thanks_btn)
-        
-        button_layout.addStretch(1)
-        layout.addLayout(button_layout)
+        # 添加其他设置卡片（应用程序配置、外观设置等）
+        self._setup_additional_settings(layout)
         
         layout.addStretch(1)
         
@@ -1133,6 +1111,99 @@ class SettingsPage(ScrollArea):
         # 标记需要加载配置
         self._config_loaded = False
         self.worker = None
+        self._save_timer = None
+    
+    def _setup_additional_settings(self, layout):
+        """设置其他设置卡片"""
+        # 应用程序配置卡片
+        app_config_card = GroupHeaderCardWidget(self)
+        app_config_card.setTitle(tr("application_config"))
+        app_config_card.setBorderRadius(8)
+        
+        # 调试模式
+        self.debug_check = CheckBox(tr("enable_debug_log"))
+        app_config_card.addGroup(FluentIcon.DEVELOPER_TOOLS, tr("debug_mode"), tr("debug_mode_hint"), self.debug_check)
+        
+        # 保存日志文件
+        self.logging_check = CheckBox(tr("save_logs_to_file"))
+        app_config_card.addGroup(FluentIcon.SAVE, tr("save_log_files"), tr("save_log_files_hint"), self.logging_check)
+        
+        # 强制解锁工具模式
+        self.unlocker_combo = ComboBox()
+        self.unlocker_combo.addItems([tr("auto_detect"), tr("force_steamtools"), tr("force_greenluma")])
+        self.unlocker_combo.setCurrentIndex(0)
+        self.unlocker_combo.setFixedWidth(180)
+        app_config_card.addGroup(FluentIcon.SETTING, tr("unlocker_mode"), tr("force_unlocker_hint"), self.unlocker_combo)
+        
+        layout.addWidget(app_config_card)
+        
+        # 外观设置卡片
+        appearance_card = GroupHeaderCardWidget(self)
+        appearance_card.setTitle(tr("appearance"))
+        appearance_card.setBorderRadius(8)
+        
+        # 主题模式
+        self.theme_combo = ComboBox()
+        self.theme_combo.addItems([tr("light_theme"), tr("dark_theme"), tr("follow_system")])
+        self.theme_combo.setCurrentIndex(2 if not isDarkTheme() else 1)
+        self.theme_combo.currentIndexChanged.connect(self.on_theme_mode_changed)
+        self.theme_combo.setFixedWidth(150)
+        appearance_card.addGroup(FluentIcon.PALETTE, tr("theme_mode"), tr("theme_mode_hint"), self.theme_combo)
+        
+        # 主题色
+        self.color_combo = ComboBox()
+        self.color_combo.addItems([
+            tr("default_blue"),
+            tr("purple"),
+            tr("green"),
+            tr("orange"),
+            tr("red"),
+            tr("pink")
+        ])
+        self.color_combo.currentIndexChanged.connect(self.on_theme_color_changed)
+        self.color_combo.setFixedWidth(200)
+        appearance_card.addGroup(FluentIcon.BRUSH, tr("theme_color"), tr("theme_color_hint"), self.color_combo)
+        
+        # 语言
+        self.lang_combo = ComboBox()
+        self.lang_combo.addItems(["简体中文", "English"])
+        self.lang_combo.setCurrentIndex(0)
+        self.lang_combo.currentIndexChanged.connect(self.on_language_changed)
+        self.lang_combo.setFixedWidth(150)
+        appearance_card.addGroup(FluentIcon.LANGUAGE, tr("language"), tr("language_hint"), self.lang_combo)
+        
+        # 窗口特效
+        self.effect_combo = ComboBox()
+        self.effect_combo.addItems([
+            tr("effect_none"),
+            tr("effect_mica")
+        ])
+        self.effect_combo.currentIndexChanged.connect(self.on_window_effect_changed)
+        self.effect_combo.setFixedWidth(150)
+        appearance_card.addGroup(FluentIcon.PALETTE, tr("window_effect"), tr("window_effect_hint"), self.effect_combo)
+        
+        layout.addWidget(appearance_card)
+        
+        # 按钮行
+        button_layout = QHBoxLayout()
+        
+        self.reset_btn = PushButton(tr("reset_to_default"))
+        self.reset_btn.clicked.connect(self.reset_settings)
+        self.reset_btn.setFixedWidth(120)
+        button_layout.addWidget(self.reset_btn)
+        
+        self.about_btn = PushButton(tr("about"))
+        self.about_btn.clicked.connect(self.show_about)
+        self.about_btn.setFixedWidth(100)
+        button_layout.addWidget(self.about_btn)
+        
+        self.thanks_btn = PushButton(tr("thanks"))
+        self.thanks_btn.clicked.connect(self.show_thanks)
+        self.thanks_btn.setFixedWidth(100)
+        button_layout.addWidget(self.thanks_btn)
+        
+        button_layout.addStretch(1)
+        layout.addLayout(button_layout)
     
     def showEvent(self, event):
         """页面显示时加载配置"""
@@ -1140,6 +1211,48 @@ class SettingsPage(ScrollArea):
         if not self._config_loaded:
             self._config_loaded = True
             self.load_config()
+            # 设置自动保存监听器
+            self._setup_auto_save_listeners()
+    
+    def _setup_auto_save_listeners(self):
+        """设置自动保存监听器"""
+        # Steam路径和Token输入框
+        if self.steam_path_edit:
+            self.steam_path_edit.textChanged.connect(self._on_setting_changed_delayed)
+        if self.token_edit:
+            self.token_edit.textChanged.connect(self._on_setting_changed_delayed)
+        
+        # 复选框
+        if self.debug_check:
+            self.debug_check.stateChanged.connect(self._on_setting_changed)
+        if self.logging_check:
+            self.logging_check.stateChanged.connect(self._on_setting_changed)
+        
+        # 下拉框
+        if self.unlocker_combo:
+            self.unlocker_combo.currentIndexChanged.connect(self._on_setting_changed)
+        
+        # 窗口特效
+        if self.effect_combo:
+            self.effect_combo.currentIndexChanged.connect(self._on_setting_changed)
+    
+    def _on_setting_changed(self):
+        """设置改变时立即保存"""
+        self.save_settings()
+    
+    def _on_setting_changed_delayed(self):
+        """设置改变时延迟保存（用于文本输入）"""
+        # 取消之前的定时器
+        if self._save_timer:
+            self._save_timer.stop()
+        else:
+            from PyQt6.QtCore import QTimer
+            self._save_timer = QTimer()
+            self._save_timer.timeout.connect(self.save_settings)
+            self._save_timer.setSingleShot(True)
+        
+        # 延迟500ms保存，避免频繁保存
+        self._save_timer.start(500)
     
     def on_theme_mode_changed(self, index):
         """主题模式切换"""
@@ -1212,6 +1325,18 @@ class SettingsPage(ScrollArea):
             else:
                 self.lang_combo.setCurrentIndex(1)
     
+    def on_window_effect_changed(self, index):
+        """窗口特效切换"""
+        effect_map = {0: "none", 1: "mica"}
+        effect_type = effect_map.get(index, "none")
+        
+        # 立即应用特效
+        if hasattr(self.window(), 'apply_window_effect'):
+            self.window().apply_window_effect(effect_type)
+        
+        # 保存设置
+        self.save_theme_setting("window_effect", effect_type)
+    
     def save_language_setting(self, lang):
         """保存语言设置"""
         try:
@@ -1262,7 +1387,7 @@ class SettingsPage(ScrollArea):
 
 项目地址: https://github.com/zhouchentao666/Cai-install-Fluent-GUI"""
         
-        dialog = MessageBox("关于", about_text, self.window())
+        dialog = MessageBox(tr("about_title"), about_text, self.window())
         dialog.exec()
     
     def show_thanks(self):
@@ -1290,7 +1415,7 @@ class SettingsPage(ScrollArea):
 
 感谢所有为本项目做出贡献的开发者和用户！"""
         
-        dialog = MessageBox("鸣谢", thanks_text, self.window())
+        dialog = MessageBox(tr("thanks_title"), thanks_text, self.window())
         dialog.exec()
     
     def load_config(self):
@@ -1309,63 +1434,86 @@ class SettingsPage(ScrollArea):
     def on_config_loaded(self, config):
         """配置加载完成"""
         if config:
-            self.steam_path_edit.setText(config.get("Custom_Steam_Path", ""))
-            self.token_edit.setText(config.get("Github_Personal_Token", ""))
+            # 获取主设置卡片
+            settings_card = self.findChild(SettinsCard)
+            if settings_card:
+                settings_card.steam_path_edit.setText(config.get("Custom_Steam_Path", ""))
+                settings_card.token_edit.setText(config.get("Github_Personal_Token", ""))
             
             # 加载应用程序配置
-            self.debug_check.setChecked(config.get("debug_mode", False))
-            self.logging_check.setChecked(config.get("logging_files", True))
+            if self.debug_check:
+                self.debug_check.setChecked(config.get("debug_mode", False))
+            if self.logging_check:
+                self.logging_check.setChecked(config.get("logging_files", True))
             
             # 加载解锁工具模式
-            force_unlocker = config.get("force_unlocker_type", "auto")
-            if force_unlocker == "steamtools":
-                self.unlocker_combo.setCurrentIndex(1)
-            elif force_unlocker == "greenluma":
-                self.unlocker_combo.setCurrentIndex(2)
-            else:
-                self.unlocker_combo.setCurrentIndex(0)
+            if self.unlocker_combo:
+                force_unlocker = config.get("force_unlocker_type", "auto")
+                if force_unlocker == "steamtools":
+                    self.unlocker_combo.setCurrentIndex(1)
+                elif force_unlocker == "greenluma":
+                    self.unlocker_combo.setCurrentIndex(2)
+                else:
+                    self.unlocker_combo.setCurrentIndex(0)
             
             # 加载语言设置
-            # 先断开信号连接，避免触发 on_language_changed
-            self.lang_combo.currentIndexChanged.disconnect(self.on_language_changed)
-            
-            lang = config.get("language", "zh_CN")
-            if lang == "zh_CN":
-                self.lang_combo.setCurrentIndex(0)
-            else:
-                self.lang_combo.setCurrentIndex(1)
-            
-            # 重新连接信号
-            self.lang_combo.currentIndexChanged.connect(self.on_language_changed)
+            if self.lang_combo:
+                # 先断开信号连接，避免触发 on_language_changed
+                self.lang_combo.currentIndexChanged.disconnect(self.on_language_changed)
+                
+                lang = config.get("language", "zh_CN")
+                if lang == "zh_CN":
+                    self.lang_combo.setCurrentIndex(0)
+                else:
+                    self.lang_combo.setCurrentIndex(1)
+                
+                # 重新连接信号
+                self.lang_combo.currentIndexChanged.connect(self.on_language_changed)
             
             # 加载主题模式设置
-            theme_mode = config.get("theme_mode", "auto")
-            if theme_mode == "light":
-                self.theme_combo.setCurrentIndex(0)
-            elif theme_mode == "dark":
-                self.theme_combo.setCurrentIndex(1)
-            else:
-                self.theme_combo.setCurrentIndex(2)
+            if self.theme_combo:
+                theme_mode = config.get("theme_mode", "auto")
+                if theme_mode == "light":
+                    self.theme_combo.setCurrentIndex(0)
+                elif theme_mode == "dark":
+                    self.theme_combo.setCurrentIndex(1)
+                else:
+                    self.theme_combo.setCurrentIndex(2)
             
             # 加载主题色设置
-            theme_color = config.get("theme_color", "#0078d4")
-            color_map = {
-                "#0078d4": 0,
-                "#9b4dca": 1,
-                "#10893e": 2,
-                "#ff8c00": 3,
-                "#e81123": 4,
-                "#e3008c": 5
-            }
-            color_index = color_map.get(theme_color, 0)
-            self.color_combo.setCurrentIndex(color_index)
+            if self.color_combo:
+                theme_color = config.get("theme_color", "#0078d4")
+                color_map = {
+                    "#0078d4": 0,
+                    "#9b4dca": 1,
+                    "#10893e": 2,
+                    "#ff8c00": 3,
+                    "#e81123": 4,
+                    "#e3008c": 5
+                }
+                color_index = color_map.get(theme_color, 0)
+                self.color_combo.setCurrentIndex(color_index)
+            
+            # 加载窗口特效设置
+            if self.effect_combo:
+                window_effect = config.get("window_effect", "none")
+                effect_map = {
+                    "none": 0,
+                    "mica": 1
+                }
+                effect_index = effect_map.get(window_effect, 0)
+                self.effect_combo.setCurrentIndex(effect_index)
+                
+                # 应用窗口特效
+                if hasattr(self.window(), 'apply_window_effect'):
+                    self.window().apply_window_effect(window_effect)
     
     @pyqtSlot(str)
     def on_load_error(self, error):
         """加载失败"""
         InfoBar.error(
-            title="加载配置失败",
-            content=error,
+                title=tr("load_config_failed"),
+                content=error,
             parent=self,
             position=InfoBarPosition.TOP
         )
@@ -1385,30 +1533,42 @@ class SettingsPage(ScrollArea):
                 config = DEFAULT_CONFIG.copy()
             
             # 更新配置
-            config["Custom_Steam_Path"] = self.steam_path_edit.text().strip()
-            config["Github_Personal_Token"] = self.token_edit.text().strip()
+            settings_card = self.findChild(SettinsCard)
+            if settings_card:
+                config["Custom_Steam_Path"] = settings_card.steam_path_edit.text().strip()
+                config["Github_Personal_Token"] = settings_card.token_edit.text().strip()
             
             # 保存应用程序配置
-            config["debug_mode"] = self.debug_check.isChecked()
-            config["logging_files"] = self.logging_check.isChecked()
+            if self.debug_check:
+                config["debug_mode"] = self.debug_check.isChecked()
+            if self.logging_check:
+                config["logging_files"] = self.logging_check.isChecked()
             
             # 保存解锁工具模式
-            unlocker_map = {0: "auto", 1: "steamtools", 2: "greenluma"}
-            config["force_unlocker_type"] = unlocker_map.get(self.unlocker_combo.currentIndex(), "auto")
+            if self.unlocker_combo:
+                unlocker_map = {0: "auto", 1: "steamtools", 2: "greenluma"}
+                config["force_unlocker_type"] = unlocker_map.get(self.unlocker_combo.currentIndex(), "auto")
             
             # 保存主题模式
-            theme_mode_map = {0: "light", 1: "dark", 2: "auto"}
-            config["theme_mode"] = theme_mode_map.get(self.theme_combo.currentIndex(), "auto")
+            if self.theme_combo:
+                theme_mode_map = {0: "light", 1: "dark", 2: "auto"}
+                config["theme_mode"] = theme_mode_map.get(self.theme_combo.currentIndex(), "auto")
             
             # 保存主题色
-            colors = ["#0078d4", "#9b4dca", "#10893e", "#ff8c00", "#e81123", "#e3008c"]
-            color_index = self.color_combo.currentIndex()
-            if 0 <= color_index < len(colors):
-                config["theme_color"] = colors[color_index]
+            if self.color_combo:
+                colors = ["#0078d4", "#9b4dca", "#10893e", "#ff8c00", "#e81123", "#e3008c"]
+                color_index = self.color_combo.currentIndex()
+                if 0 <= color_index < len(colors):
+                    config["theme_color"] = colors[color_index]
             
             # 保存语言（已经在 on_language_changed 中保存了，这里也保存一次以防万一）
             lang_map = {0: "zh_CN", 1: "en_US"}
             config["language"] = lang_map.get(self.lang_combo.currentIndex(), "zh_CN")
+            
+            # 保存窗口特效
+            if self.effect_combo:
+                effect_map = {0: "none", 1: "mica"}
+                config["window_effect"] = effect_map.get(self.effect_combo.currentIndex(), "none")
             
             # 保存配置
             with open(config_path, 'w', encoding='utf-8') as f:
@@ -1424,19 +1584,15 @@ class SettingsPage(ScrollArea):
     @pyqtSlot(object)
     def on_save_success(self, result):
         """保存成功"""
-        InfoBar.success(
-            title="保存成功",
-            content="配置已保存",
-            parent=self,
-            position=InfoBarPosition.TOP
-        )
+        # 自动保存时不显示提示，保持界面简洁
+        pass
     
     @pyqtSlot(str)
     def on_save_error(self, error):
         """保存失败"""
         InfoBar.error(
-            title="保存失败",
-            content=error,
+                title=tr("save_failed"),
+                content=error,
             parent=self,
             position=InfoBarPosition.TOP
         )
@@ -1514,6 +1670,9 @@ class MainWindow(MSFluentWindow):
         super().__init__()
         self.setWindowTitle(tr("app_title"))
         self.resize(1000, 700)
+        
+        # 设置窗口图标为Fluent内置的下载图标
+        self.setWindowIcon(FluentIcon.CLOUD_DOWNLOAD.icon())
         
         # 设置标题栏（避免按钮重叠）
         self.titleBar.raise_()
@@ -1622,6 +1781,39 @@ class MainWindow(MSFluentWindow):
             parent=self,
             position=InfoBarPosition.TOP
         )
+    
+    def apply_window_effect(self, effect_type):
+        """应用窗口特效"""
+        import platform
+        if platform.system() != 'Windows':
+            return
+        
+        if effect_type == "mica":
+            # 启用云母特效（仅Windows 11）
+            self.setMicaEffectEnabled(True)
+            self.setStyleSheet("background-color: transparent")
+        elif effect_type == "none":
+            # 禁用特效
+            self.setMicaEffectEnabled(False)
+            self.setStyleSheet("")
+        
+        # 保存设置
+        try:
+            config_path = Path.cwd() / 'config.json'
+            import json
+            
+            if config_path.exists():
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    config = json.load(f)
+            else:
+                config = {}
+            
+            config["window_effect"] = effect_type
+            
+            with open(config_path, 'w', encoding='utf-8') as f:
+                json.dump(config, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"保存窗口特效设置失败: {e}")
 
 
 def main():
@@ -1661,6 +1853,19 @@ def main():
     
     # 创建主窗口
     window = MainWindow()
+    
+    # 加载并应用窗口特效
+    try:
+        config_path = Path.cwd() / 'config.json'
+        if config_path.exists():
+            import json
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+                window_effect = config.get("window_effect", "none")
+                window.apply_window_effect(window_effect)
+    except Exception as e:
+        print(f"加载窗口特效失败: {e}")
+    
     window.show()
     
     sys.exit(app.exec())
