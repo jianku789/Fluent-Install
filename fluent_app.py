@@ -18,7 +18,8 @@ from qfluentwidgets import (
     ComboBox, SwitchButton, ProgressRing, InfoBar,
     InfoBarPosition, CardWidget, ScrollArea, CaptionLabel,
     TransparentToolButton, IconWidget, FlowLayout, SearchLineEdit,
-    PrimaryPushButton, CheckBox, GroupHeaderCardWidget, InfoBarIcon
+    PrimaryPushButton, CheckBox, GroupHeaderCardWidget, InfoBarIcon,
+    SpinBox
 )
 
 # 导入后端
@@ -35,6 +36,26 @@ LANGUAGES = {
     "en_US": {
         "name": "English",
         "locale": QLocale(QLocale.Language.English, QLocale.Country.UnitedStates)
+    },
+    "fr_FR": {
+        "name": "Français",
+        "locale": QLocale(QLocale.Language.French, QLocale.Country.France)
+    },
+    "ru_RU": {
+        "name": "Русский",
+        "locale": QLocale(QLocale.Language.Russian, QLocale.Country.Russia)
+    },
+    "de_DE": {
+        "name": "Deutsch",
+        "locale": QLocale(QLocale.Language.German, QLocale.Country.Germany)
+    },
+    "ja_JP": {
+        "name": "日本語",
+        "locale": QLocale(QLocale.Language.Japanese, QLocale.Country.Japan)
+    },
+    "zh_TW": {
+        "name": "繁體中文",
+        "locale": QLocale(QLocale.Language.Chinese, QLocale.Country.Taiwan)
     }
 }
 
@@ -63,10 +84,10 @@ def load_language_config():
             import json
             with open(config_path, 'r', encoding='utf-8') as f:
                 config = json.load(f)
-            return config.get("language", "zh_CN")
+            return config.get("language", "system")
     except:
         pass
-    return "zh_CN"
+    return "system"
 
 
 # Simple text translation mapping
@@ -76,6 +97,10 @@ TEXTS = {
         "home": "主页",
         "search": "搜索入库",
         "settings": "设置",
+        "default_page": "默认界面",
+        "default_page_hint": "选择应用启动后显示的默认界面",
+        "default_page_home": "主页",
+        "default_page_search": "搜索入库",
         "restart_steam": "重启 Steam",
         "installed_games": "已入库的游戏",
         "search_placeholder": "搜索游戏名称或 AppID",
@@ -94,6 +119,13 @@ TEXTS = {
         "add_all_dlc": "添加所有 DLC",
         "patch_depot_key": "修补 Depot Key",
         "manifest_source": "清单源:",
+        "view_mode": "视图",
+        "sort_mode": "排序",
+        "view_list": "列表",
+        "view_grid": "卡片",
+        "sort_default": "默认",
+        "sort_az": "A-Z",
+        "sort_za": "Z-A",
         "add_game": "入库游戏",
         "steam_path": "Steam 路径",
         "steam_path_hint": "选择Steam安装路径，留空则自动检测",
@@ -137,6 +169,8 @@ TEXTS = {
         "force_steamtools": "强制 SteamTools",
         "force_greenluma": "强制 GreenLuma",
         "force_unlocker_hint": "强制使用指定的解锁工具",
+        "download_timeout": "入库超时时间",
+        "download_timeout_hint": "下载清单的超时时间（秒），网络较慢时可适当增大",
         "theme_mode_hint": "选择应用主题模式",
         "theme_color_hint": "选择主题颜色",
         "language_hint": "选择应用语言",
@@ -195,7 +229,7 @@ TEXTS = {
         "reset_to_default": "重置为默认",
         "about_title": "关于",
         "thanks_title": "鸣谢",
-        "about_text": "Cai Install - Fluent Design 版本\n\n版本: 1.0.0\n\n这是一个基于 PyQt6-Fluent-Widgets 的现代化 Steam 游戏解锁工具。\n\n功能特性:\n• Fluent Design 设计风格\n• 支持多种清单源\n• 游戏搜索和入库\n• 已入库游戏管理\n• 主题自定义\n\n项目地址: https://github.com/zhouchentao666/Cai-install-Fluent-GUI",
+        "about_text": "Cai Install - Fluent Design 版本\n\n版本: 1.3\n\n这是一个基于 PyQt6-Fluent-Widgets 的现代化 Steam 游戏解锁工具。\n\n功能特性:\n• Fluent Design 设计风格\n• 支持多种清单源\n• 游戏搜索和入库\n• 已入库游戏管理\n• 主题自定义\n\n项目地址: https://github.com/zhouchentao666/Cai-install-Fluent-GUI",
         "thanks_text": "特别鸣谢\n\n开发者:\n• zhouchentao666 - 制作人员\n\n开源项目:\n• PyQt6 - Qt6 Python 绑定\n• PyQt-Fluent-Widgets - Fluent Design 组件库\n• Cai-install-Web-GUI - 原始项目作者\n• httpx - 异步 HTTP 客户端\n\n清单源提供:\n• SWA V2\n• Cysaw\n• Furcate\n• Walftech\n• steamdatabase\n• SteamAutoCracks\n• Sudama\n• 清单不求人\n\n感谢所有为本项目做出贡献的开发者和用户！",
     },
     "en_US": {
@@ -203,6 +237,10 @@ TEXTS = {
         "home": "Home",
         "search": "Search",
         "settings": "Settings",
+        "default_page": "Default Page",
+        "default_page_hint": "Select the default page to display when the application starts",
+        "default_page_home": "Home",
+        "default_page_search": "Search Library",
         "restart_steam": "Restart Steam",
         "installed_games": "Installed Games",
         "search_placeholder": "Search game name or AppID",
@@ -259,6 +297,8 @@ TEXTS = {
         "force_steamtools": "Force SteamTools",
         "force_greenluma": "Force GreenLuma",
         "force_unlocker_hint": "Force use of specified unlocker",
+        "download_timeout": "Download Timeout",
+        "download_timeout_hint": "Timeout in seconds for manifest downloads, increase if network is slow",
         "light_theme": "Light",
         "dark_theme": "Dark",
         "follow_system": "Follow System",
@@ -313,9 +353,673 @@ TEXTS = {
         "reset_to_default": "Reset Default",
         "about_title": "About",
         "thanks_title": "Credits",
-        "about_text": "Cai Install - Fluent Design Version\n\nVersion: 1.0.0\n\nThis is a modern Steam game unlocking tool based on PyQt6-Fluent-Widgets.\n\nFeatures:\n• Fluent Design style\n• Support for multiple manifest sources\n• Game search and adding\n• Installed games management\n• Theme customization\n\nProject URL: https://github.com/zhouchentao666/Cai-install-Fluent-GUI",
+        "about_text": "Cai Install - Fluent Design Version\n\nVersion: 1.3\n\nThis is a modern Steam game unlocking tool based on PyQt6-Fluent-Widgets.\n\nFeatures:\n• Fluent Design style\n• Support for multiple manifest sources\n• Game search and adding\n• Installed games management\n• Theme customization\n\nProject URL: https://github.com/zhouchentao666/Cai-install-Fluent-GUI",
         "thanks_text": "Special Thanks\n\nDevelopers:\n• zhouchentao666 - Developer\n\nOpen Source Projects:\n• PyQt6 - Qt6 Python Bindings\n• PyQt-Fluent-Widgets - Fluent Design Component Library\n• Cai-install-Web-GUI - Original Project Author\n• httpx - Async HTTP Client\n\nManifest Sources:\n• SWA V2\n• Cysaw\n• Furcate\n• Walftech\n• steamdatabase\n• SteamAutoCracks\n• Sudama\n• Manifest Helper Library\n\nThanks to all developers and users who contributed to this project!",
-    }
+    },
+    "fr_FR": {
+        "app_title": "FluentInstall",
+        "home": "Accueil",
+        "search": "Rechercher",
+        "settings": "Paramètres",
+        "default_page": "Page par défaut",
+        "default_page_hint": "Sélectionnez la page par défaut à afficher au démarrage",
+        "default_page_home": "Accueil",
+        "default_page_search": "Recherche",
+        "restart_steam": "Redémarrer Steam",
+        "installed_games": "Jeux installés",
+        "search_placeholder": "Rechercher un nom de jeu ou AppID",
+        "loading": "Chargement...",
+        "no_games": "Aucun jeu",
+        "delete": "Supprimer",
+        "confirm_delete": "Confirmer la suppression",
+        "delete_message": "Êtes-vous sûr de vouloir supprimer l'AppID {0}?\n\nCette action ne peut pas être annulée.",
+        "deleting": "Suppression en cours",
+        "delete_success": "Suppression réussie",
+        "delete_failed": "Échec de la suppression",
+        "search_and_add": "Rechercher et ajouter des jeux",
+        "game_name_or_appid": "Entrez le nom du jeu ou AppID / lien Steam",
+        "search_button": "Rechercher",
+        "add_options": "Options d'ajout",
+        "add_all_dlc": "Ajouter tous les DLC",
+        "patch_depot_key": "Patch clé de dépôt",
+        "manifest_source": "Source du manifeste:",
+        "add_game": "Ajouter un jeu",
+        "steam_path": "Chemin Steam",
+        "steam_path_hint": "Sélectionnez le chemin d'installation Steam, laissez vide pour détection automatique",
+        "github_token": "Jeton personnel GitHub",
+        "github_token_hint": "Optionnel, pour augmenter les limites de requêtes API",
+        "basic_settings": "Paramètres de base",
+        "appearance": "Apparence",
+        "theme_mode": "Mode du thème",
+        "theme_color": "Couleur du thème",
+        "language": "Langue",
+        "save_settings": "Enregistrer les paramètres",
+        "about": "À propos",
+        "thanks": "Crédits",
+        "restart_required": "Redémarrage requis",
+        "language_changed": "Langue changée en {0}\n\nRedémarrer l'application maintenant pour appliquer les changements?",
+        "restart_steam_confirm": "Redémarrer Steam",
+        "restart_steam_message": "Êtes-vous sûr de vouloir redémarrer Steam?\n\nCela fermera Steam en cours et le redémarrera.",
+        "total_games": "Total: {0} jeux | SteamTools: {1} | GreenLuma: {2}",
+        "load_failed": "Échec du chargement: {0}",
+        "reset_settings": "Réinitialiser les paramètres",
+        "reset_settings_message": "Êtes-vous sûr de vouloir réinitialiser tous les paramètres par défaut?\n\nCette action ne peut pas être annulée.",
+        "reset_success": "Réinitialisation réussie",
+        "reset_success_message": "Les paramètres ont été réinitialisés, veuillez recharger la page",
+        "reset_failed": "Échec de la réinitialisation",
+        "restarting": "Redémarrage en cours",
+        "restarting_message": "Redémarrage de Steam, veuillez patienter...",
+        "restart_success": "Redémarrage réussi",
+        "restart_success_message": "Steam a été redémarré",
+        "restart_failed": "Échec du redémarrage",
+        "restart_failed_message": "Échec du redémarrage de Steam, veuillez redémarrer manuellement",
+        "restart_error_message": "Erreur lors du redémarrage de Steam: {0}",
+        "application_config": "Configuration de l'application",
+        "debug_mode": "Mode débogage",
+        "debug_mode_hint": "Activer la sortie détaillée du journal de débogage",
+        "enable_debug_log": "Activer la sortie détaillée du journal de débogage",
+        "save_log_files": "Enregistrer les fichiers journaux",
+        "save_logs_to_file": "Enregistrer les journaux dans un fichier",
+        "save_log_files_hint": "Enregistrer les journaux dans un fichier",
+        "unlocker_mode": "Mode de déverrouillage",
+        "auto_detect": "Détection automatique",
+        "force_steamtools": "Forcer SteamTools",
+        "force_greenluma": "Forcer GreenLuma",
+        "force_unlocker_hint": "Forcer l'utilisation du déverrouilleur spécifié",
+        "download_timeout": "Délai de téléchargement",
+        "download_timeout_hint": "Délai d'attente pour les téléchargements de manifestes (secondes), augmentez si le réseau est lent",
+        "theme_mode_hint": "Sélectionnez le mode du thème de l'application",
+        "theme_color_hint": "Sélectionnez la couleur du thème",
+        "language_hint": "Sélectionnez la langue de l'application",
+        "window_effect": "Effet de fenêtre",
+        "window_effect_hint": "Sélectionnez l'effet d'arrière-plan de la fenêtre",
+        "effect_none": "Aucun effet",
+        "effect_mica": "Mica",
+        "light_theme": "Clair",
+        "dark_theme": "Sombre",
+        "follow_system": "Suivre le système",
+        "default_blue": "Bleu par défaut (#0078d4)",
+        "purple": "Violet (#9b4dca)",
+        "green": "Vert (#10893e)",
+        "orange": "Orange (#ff8c00)",
+        "red": "Rouge (#e81123)",
+        "pink": "Rose (#e3008c)",
+        "tip_source_fail": "Astuce: Si une source échoue, essayez-en une autre",
+        "auto_search_github": "Recherche automatique GitHub",
+        "swa_v2": "SWA V2",
+        "cysaw": "Cysaw",
+        "furcate": "Furcate",
+        "walftech": "Walftech",
+        "steamdatabase": "steamdatabase",
+        "steamautocracks_v2": "SteamAutoCracks V2 (Clés seulement)",
+        "sudama": "Bibliothèque Sudama (Clés seulement)",
+        "buqiuren": "Bibliothèque d'aide de manifeste (Manifeste seulement)",
+        "github_auiowu": "GitHub (Auiowu)",
+        "github_sac": "GitHub (SAC)",
+        "restart_steam_title": "Redémarrer Steam",
+        "restart_steam_confirm_message": "Êtes-vous sûr de vouloir redémarrer Steam?\n\nCela fermera Steam en cours et le redémarrera.",
+        "tip": "Astuce",
+        "recognition_success": "Reconnaissance réussie",
+        "game_not_found": "Jeu non trouvé",
+        "check_game_name": "Vérifiez le nom du jeu ou essayez d'utiliser l'AppID",
+        "search_failed": "Échec de la recherche",
+        "game_selected": "Jeu sélectionné",
+        "add_success": "Ajout réussi",
+        "add_success_content": "L'AppID {0} a été ajouté avec succès, redémarrez Steam pour prendre effet",
+        "adding_game": "Ajout du jeu en cours...",
+        "please_wait_adding": "Veuillez patienter, traitement de l'ajout",
+        "process_failed": "Échec du traitement",
+        "check_logs": "Veuillez consulter les journaux",
+        "check_details": "Échec du traitement, veuillez consulter les détails ou essayer d'autres sources",
+        "auto_detect_placeholder": "Laisser vide pour détection automatique",
+        "token_placeholder": "Optionnel, pour augmenter les limites de requêtes API",
+        "load_config_failed": "Échec du chargement de la configuration",
+        "save_success": "Enregistrement réussi",
+        "save_success_content": "Configuration enregistrée",
+        "save_failed": "Échec de l'enregistrement",
+        "unknown_error": "Erreur inconnue",
+        "data_process_failed": "Échec du traitement des données",
+        "please_wait": "Veuillez patienter",
+        "unknown_game": "Jeu inconnu",
+        "reset_to_default": "Réinitialiser par défaut",
+        "about_title": "À propos",
+        "thanks_title": "Crédits",
+        "about_text": "Cai Install - Version Fluent Design\n\nVersion: 1.3\n\nCeci est un outil de déverrouillage de jeu Steam moderne basé sur PyQt6-Fluent-Widgets.\n\nFonctionnalités:\n• Style Fluent Design\n• Support de plusieurs sources de manifestes\n• Recherche et ajout de jeux\n• Gestion des jeux installés\n• Personnalisation du thème\n\nURL du projet: https://github.com/zhouchentao666/Cai-install-Fluent-GUI",
+        "thanks_text": "Remerciements spéciaux\n\nDéveloppeurs:\n• zhouchentao666 - Développeur\n\nProjets open source:\n• PyQt6 - Bindings Python Qt6\n• PyQt-Fluent-Widgets - Bibliothèque de composants Fluent Design\n• Cai-install-Web-GUI - Auteur du projet original\n• httpx - Client HTTP asynchrone\n\nSources de manifestes:\n• SWA V2\n• Cysaw\n• Furcate\n• Walftech\n• steamdatabase\n• SteamAutoCracks\n• Sudama\n• Bibliothèque d'aide de manifeste\n\nMerci à tous les développeurs et utilisateurs qui ont contribué à ce projet!",
+    },
+    "ru_RU": {
+        "app_title": "FluentInstall",
+        "home": "Главная",
+        "search": "Поиск",
+        "settings": "Настройки",
+        "default_page": "Страница по умолчанию",
+        "default_page_hint": "Выберите страницу по умолчанию для отображения при запуске",
+        "default_page_home": "Главная",
+        "default_page_search": "Поиск",
+        "restart_steam": "Перезапустить Steam",
+        "installed_games": "Установленные игры",
+        "search_placeholder": "Поиск названия игры или AppID",
+        "loading": "Загрузка...",
+        "no_games": "Нет игр",
+        "delete": "Удалить",
+        "confirm_delete": "Подтвердить удаление",
+        "delete_message": "Вы уверены, что хотите удалить AppID {0}?\n\nЭто действие нельзя отменить.",
+        "deleting": "Удаление",
+        "delete_success": "Удаление успешно",
+        "delete_failed": "Ошибка удаления",
+        "search_and_add": "Поиск и добавление игр",
+        "game_name_or_appid": "Введите название игры или AppID / ссылку Steam",
+        "search_button": "Поиск",
+        "add_options": "Опции добавления",
+        "add_all_dlc": "Добавить все DLC",
+        "patch_depot_key": "Патч ключ депо",
+        "manifest_source": "Источник манифеста:",
+        "add_game": "Добавить игру",
+        "steam_path": "Путь Steam",
+        "steam_path_hint": "Выберите путь установки Steam, оставьте пустым для автоматического обнаружения",
+        "github_token": "Персональный токен GitHub",
+        "github_token_hint": "Необязательно, для увеличения лимитов API запросов",
+        "basic_settings": "Базовые настройки",
+        "appearance": "Внешний вид",
+        "theme_mode": "Режим темы",
+        "theme_color": "Цвет темы",
+        "language": "Язык",
+        "save_settings": "Сохранить настройки",
+        "about": "О программе",
+        "thanks": "Благодарности",
+        "restart_required": "Требуется перезапуск",
+        "language_changed": "Язык изменен на {0}\n\nПерезапустить приложение сейчас для применения изменений?",
+        "restart_steam_confirm": "Перезапустить Steam",
+        "restart_steam_message": "Вы уверены, что хотите перезапустить Steam?\n\nЭто закроет текущий Steam и перезапустит его.",
+        "total_games": "Всего: {0} игр | SteamTools: {1} | GreenLuma: {2}",
+        "load_failed": "Ошибка загрузки: {0}",
+        "reset_settings": "Сбросить настройки",
+        "reset_settings_message": "Вы уверены, что хотите сбросить все настройки по умолчанию?\n\nЭто действие нельзя отменить.",
+        "reset_success": "Сброс успешен",
+        "reset_success_message": "Настройки сброшены по умолчанию, пожалуйста, перезагрузите страницу",
+        "reset_failed": "Ошибка сброса",
+        "restarting": "Перезапуск",
+        "restarting_message": "Перезапуск Steam, пожалуйста подождите...",
+        "restart_success": "Перезапуск успешен",
+        "restart_success_message": "Steam был перезапущен",
+        "restart_failed": "Ошибка перезапуска",
+        "restart_failed_message": "Ошибка перезапуска Steam, пожалуйста перезапустите вручную",
+        "restart_error_message": "Ошибка при перезапуске Steam: {0}",
+        "application_config": "Конфигурация приложения",
+        "debug_mode": "Режим отладки",
+        "debug_mode_hint": "Включить подробный вывод журнала отладки",
+        "enable_debug_log": "Включить подробный вывод журнала отладки",
+        "save_log_files": "Сохранить файлы журналов",
+        "save_logs_to_file": "Сохранить журналы в файл",
+        "save_log_files_hint": "Сохранить журналы в файл",
+        "unlocker_mode": "Режим разблокировки",
+        "auto_detect": "Автоопределение",
+        "force_steamtools": "Принудительно SteamTools",
+        "force_greenluma": "Принудительно GreenLuma",
+        "force_unlocker_hint": "Принудительно использовать указанный инструмент разблокировки",
+        "download_timeout": "Таймаут загрузки",
+        "download_timeout_hint": "Таймаут в секундах для загрузки манифестов, увеличьте при медленной сети",
+        "theme_mode_hint": "Выберите режим темы приложения",
+        "theme_color_hint": "Выберите цвет темы",
+        "language_hint": "Выберите язык приложения",
+        "window_effect": "Эффект окна",
+        "window_effect_hint": "Выберите эффект фона окна",
+        "effect_none": "Без эффекта",
+        "effect_mica": "Мика",
+        "light_theme": "Светлая",
+        "dark_theme": "Темная",
+        "follow_system": "Следовать системе",
+        "default_blue": "Синий по умолчанию (#0078d4)",
+        "purple": "Фиолетовый (#9b4dca)",
+        "green": "Зеленый (#10893e)",
+        "orange": "Оранжевый (#ff8c00)",
+        "red": "Красный (#e81123)",
+        "pink": "Розовый (#e3008c)",
+        "tip_source_fail": "Совет: Если один источник не работает, попробуйте другой",
+        "auto_search_github": "Автопоиск GitHub",
+        "swa_v2": "SWA V2",
+        "cysaw": "Cysaw",
+        "furcate": "Furcate",
+        "walftech": "Walftech",
+        "steamdatabase": "steamdatabase",
+        "steamautocracks_v2": "SteamAutoCracks V2 (Только ключи)",
+        "sudama": "Библиотека Sudama (Только ключи)",
+        "buqiuren": "Библиотека помощи манифеста (Только манифест)",
+        "github_auiowu": "GitHub (Auiowu)",
+        "github_sac": "GitHub (SAC)",
+        "restart_steam_title": "Перезапустить Steam",
+        "restart_steam_confirm_message": "Вы уверены, что хотите перезапустить Steam?\n\nЭто закроет текущий Steam и перезапустит его.",
+        "tip": "Совет",
+        "recognition_success": "Успешное распознавание",
+        "game_not_found": "Игра не найдена",
+        "check_game_name": "Пожалуйста, проверьте название игры или попробуйте использовать AppID",
+        "search_failed": "Ошибка поиска",
+        "game_selected": "Игра выбрана",
+        "add_success": "Успешное добавление",
+        "add_success_content": "AppID {0} успешно добавлен, перезапустите Steam для применения",
+        "adding_game": "Добавление игры...",
+        "please_wait_adding": "Пожалуйста подождите, обработка добавления",
+        "process_failed": "Ошибка обработки",
+        "check_logs": "Пожалуйста, проверьте журналы",
+        "check_details": "Ошибка обработки, пожалуйста, проверьте детали или попробуйте другие источники",
+        "auto_detect_placeholder": "Оставьте пустым для автоматического обнаружения",
+        "token_placeholder": "Необязательно, для увеличения лимитов API запросов",
+        "load_config_failed": "Ошибка загрузки конфигурации",
+        "save_success": "Сохранение успешно",
+        "save_success_content": "Конфигурация сохранена",
+        "save_failed": "Ошибка сохранения",
+        "unknown_error": "Неизвестная ошибка",
+        "data_process_failed": "Ошибка обработки данных",
+        "please_wait": "Пожалуйста подождите",
+        "unknown_game": "Неизвестная игра",
+        "reset_to_default": "Сбросить по умолчанию",
+        "about_title": "О программе",
+        "thanks_title": "Благодарности",
+        "about_text": "Cai Install - Версия Fluent Design\n\nВерсия: 1.3\n\nЭто современный инструмент разблокировки игр Steam на основе PyQt6-Fluent-Widgets.\n\nФункции:\n• Стиль Fluent Design\n• Поддержка нескольких источников манифестов\n• Поиск и добавление игр\n• Управление установленными играми\n• Настройка темы\n\nURL проекта: https://github.com/zhouchentao666/Cai-install-Fluent-GUI",
+        "thanks_text": "Особая благодарность\n\nРазработчики:\n• zhouchentao666 - Разработчик\n\nПроекты с открытым исходным кодом:\n• PyQt6 - Привязки Python Qt6\n• PyQt-Fluent-Widgets - Библиотека компонентов Fluent Design\n• Cai-install-Web-GUI - Автор оригинального проекта\n• httpx - Асинхронный HTTP клиент\n\nИсточники манифестов:\n• SWA V2\n• Cysaw\n• Furcate\n• Walftech\n• steamdatabase\n• SteamAutoCracks\n• Sudama\n• Библиотека помощи манифеста\n\nСпасибо всем разработчикам и пользователям, внесшим вклад в этот проект!",
+    },
+    "de_DE": {
+        "app_title": "FluentInstall",
+        "home": "Startseite",
+        "search": "Suchen",
+        "settings": "Einstellungen",
+        "default_page": "Standardseite",
+        "default_page_hint": "Wählen Sie die Standardseite, die beim Start angezeigt wird",
+        "default_page_home": "Startseite",
+        "default_page_search": "Suche",
+        "restart_steam": "Steam neu starten",
+        "installed_games": "Installierte Spiele",
+        "search_placeholder": "Spielname oder AppID suchen",
+        "loading": "Laden...",
+        "no_games": "Keine Spiele",
+        "delete": "Löschen",
+        "confirm_delete": "Löschung bestätigen",
+        "delete_message": "Sind Sie sicher, dass Sie AppID {0} löschen möchten?\n\nDiese Aktion kann nicht rückgängig gemacht werden.",
+        "deleting": "Löschen",
+        "delete_success": "Löschung erfolgreich",
+        "delete_failed": "Löschung fehlgeschlagen",
+        "search_and_add": "Spiele suchen und hinzufügen",
+        "game_name_or_appid": "Spielnamen oder AppID / Steam-Link eingeben",
+        "search_button": "Suchen",
+        "add_options": "Hinzufügen-Optionen",
+        "add_all_dlc": "Alle DLCs hinzufügen",
+        "patch_depot_key": "Depot-Schlüssel patchen",
+        "manifest_source": "Manifest-Quelle:",
+        "add_game": "Spiel hinzufügen",
+        "steam_path": "Steam-Pfad",
+        "steam_path_hint": "Steam-Installationspfad auswählen, leer lassen für automatische Erkennung",
+        "github_token": "GitHub Persönliches Token",
+        "github_token_hint": "Optional, für erhöhte API-Anfrage-Limits",
+        "basic_settings": "Grundeinstellungen",
+        "appearance": "Erscheinungsbild",
+        "theme_mode": "Themen-Modus",
+        "theme_color": "Themen-Farbe",
+        "language": "Sprache",
+        "save_settings": "Einstellungen speichern",
+        "about": "Über",
+        "thanks": "Danksagungen",
+        "restart_required": "Neustart erforderlich",
+        "language_changed": "Sprache geändert zu {0}\n\nJetzt Anwendung neu starten um Änderungen anzuwenden?",
+        "restart_steam_confirm": "Steam neu starten",
+        "restart_steam_message": "Sind Sie sicher, dass Sie Steam neu starten möchten?\n\nDies wird das aktuelle Steam schließen und neu starten.",
+        "total_games": "Gesamt: {0} Spiele | SteamTools: {1} | GreenLuma: {2}",
+        "load_failed": "Laden fehlgeschlagen: {0}",
+        "reset_settings": "Einstellungen zurücksetzen",
+        "reset_settings_message": "Sind Sie sicher, dass Sie alle Einstellungen auf Standard zurücksetzen möchten?\n\nDiese Aktion kann nicht rückgängig gemacht werden.",
+        "reset_success": "Zurücksetzen erfolgreich",
+        "reset_success_message": "Einstellungen wurden auf Standard zurückgesetzt, bitte Seite neu laden",
+        "reset_failed": "Zurücksetzen fehlgeschlagen",
+        "restarting": "Neustart",
+        "restarting_message": "Steam wird neu gestartet, bitte warten...",
+        "restart_success": "Neustart erfolgreich",
+        "restart_success_message": "Steam wurde neu gestartet",
+        "restart_failed": "Neustart fehlgeschlagen",
+        "restart_failed_message": "Steam-Neustart fehlgeschlagen, bitte manuell neu starten",
+        "restart_error_message": "Fehler beim Neustart von Steam: {0}",
+        "application_config": "Anwendungs-Konfiguration",
+        "debug_mode": "Debug-Modus",
+        "debug_mode_hint": "Detaillierte Debug-Log-Ausgabe aktivieren",
+        "enable_debug_log": "Detaillierte Debug-Log-Ausgabe aktivieren",
+        "save_log_files": "Log-Dateien speichern",
+        "save_logs_to_file": "Logs in Datei speichern",
+        "save_log_files_hint": "Logs in Datei speichern",
+        "unlocker_mode": "Unlocker-Modus",
+        "auto_detect": "Automatische Erkennung",
+        "force_steamtools": "SteamTools erzwingen",
+        "force_greenluma": "GreenLuma erzwingen",
+        "force_unlocker_hint": "Verwendung des angegebenen Unlockers erzwingen",
+        "download_timeout": "Download-Timeout",
+        "download_timeout_hint": "Timeout in Sekunden für Manifest-Downloads, erhöhen Sie bei langsamem Netzwerk",
+        "theme_mode_hint": "Wählen Sie den Anwendungs-Themen-Modus",
+        "theme_color_hint": "Wählen Sie die Themen-Farbe",
+        "language_hint": "Wählen Sie die Anwendungs-Sprache",
+        "window_effect": "Fenster-Effekt",
+        "window_effect_hint": "Wählen Sie den Fenster-Hintergrund-Effekt",
+        "effect_none": "Kein Effekt",
+        "effect_mica": "Mica",
+        "light_theme": "Hell",
+        "dark_theme": "Dunkel",
+        "follow_system": "System folgen",
+        "default_blue": "Standard-Blau (#0078d4)",
+        "purple": "Violett (#9b4dca)",
+        "green": "Grün (#10893e)",
+        "orange": "Orange (#ff8c00)",
+        "red": "Rot (#e81123)",
+        "pink": "Pink (#e3008c)",
+        "tip_source_fail": "Tipp: Wenn eine Quelle fehlschlägt, versuchen Sie eine andere",
+        "auto_search_github": "Automatische GitHub-Suche",
+        "swa_v2": "SWA V2",
+        "cysaw": "Cysaw",
+        "furcate": "Furcate",
+        "walftech": "Walftech",
+        "steamdatabase": "steamdatabase",
+        "steamautocracks_v2": "SteamAutoCracks V2 (Nur Schlüssel)",
+        "sudama": "Sudama-Bibliothek (Nur Schlüssel)",
+        "buqiuren": "Manifest-Hilfsbibliothek (Nur Manifest)",
+        "github_auiowu": "GitHub (Auiowu)",
+        "github_sac": "GitHub (SAC)",
+        "restart_steam_title": "Steam neu starten",
+        "restart_steam_confirm_message": "Sind Sie sicher, dass Sie Steam neu starten möchten?\n\nDies wird das aktuelle Steam schließen und neu starten.",
+        "tip": "Tipp",
+        "recognition_success": "Erkennung erfolgreich",
+        "game_not_found": "Spiel nicht gefunden",
+        "check_game_name": "Bitte überprüfen Sie den Spielnamen oder versuchen Sie die AppID",
+        "search_failed": "Suche fehlgeschlagen",
+        "game_selected": "Spiel ausgewählt",
+        "add_success": "Hinzufügen erfolgreich",
+        "add_success_content": "AppID {0} wurde erfolgreich hinzugefügt, starten Sie Steam neu um es zu aktivieren",
+        "adding_game": "Spiel wird zur Bibliothek hinzugefügt...",
+        "please_wait_adding": "Bitte warten Sie, Hinzufügen wird verarbeitet",
+        "process_failed": "Verarbeitung fehlgeschlagen",
+        "check_logs": "Bitte überprüfen Sie die Logs",
+        "check_details": "Verarbeitung fehlgeschlagen, bitte überprüfen Sie die Details oder versuchen Sie andere Quellen",
+        "auto_detect_placeholder": "Leer lassen für automatische Erkennung",
+        "token_placeholder": "Optional, für erhöhte API-Anfrage-Limits",
+        "load_config_failed": "Konfiguration laden fehlgeschlagen",
+        "save_success": "Speichern erfolgreich",
+        "save_success_content": "Konfiguration gespeichert",
+        "save_failed": "Speichern fehlgeschlagen",
+        "unknown_error": "Unbekannter Fehler",
+        "data_process_failed": "Datenverarbeitung fehlgeschlagen",
+        "please_wait": "Bitte warten Sie",
+        "unknown_game": "Unbekanntes Spiel",
+        "reset_to_default": "Auf Standard zurücksetzen",
+        "about_title": "Über",
+        "thanks_title": "Danksagungen",
+        "about_text": "Cai Install - Fluent Design Version\n\nVersion: \n1.3\nDies ist ein modernes Steam-Spiel-Unlocking-Tool basierend auf PyQt6-Fluent-Widgets.\n\nFunktionen:\n• Fluent Design Stil\n• Unterstützung für mehrere Manifest-Quellen\n• Spielsuche und -hinzufügen\n• Verwaltung installierter Spiele\n• Themen-Anpassung\n\nProjekt-URL: https://github.com/zhouchentao666/Cai-install-Fluent-GUI",
+        "thanks_text": "Besondere Danksagung\n\nEntwickler:\n• zhouchentao666 - Entwickler\n\nOpen-Source-Projekte:\n• PyQt6 - Qt6 Python Bindings\n• PyQt-Fluent-Widgets - Fluent Design Komponentenbibliothek\n• Cai-install-Web-GUI - Originalprojekt-Autor\n• httpx - Asynchroner HTTP-Client\n\nManifest-Quellen:\n• SWA V2\n• Cysaw\n• Furcate\n• Walftech\n• steamdatabase\n• SteamAutoCracks\n• Sudama\n• Manifest-Hilfsbibliothek\n\nVielen Dank an alle Entwickler und Benutzer, die zu diesem Projekt beigetragen haben!",
+    },
+    "ja_JP": {
+        "app_title": "FluentInstall",
+        "home": "ホーム",
+        "search": "検索",
+        "settings": "設定",
+        "default_page": "デフォルトページ",
+        "default_page_hint": "アプリケーション起動時に表示するデフォルトページを選択",
+        "default_page_home": "ホーム",
+        "default_page_search": "ライブラリ検索",
+        "restart_steam": "Steamを再起動",
+        "installed_games": "インストール済みゲーム",
+        "search_placeholder": "ゲーム名またはAppIDを検索",
+        "loading": "読み込み中...",
+        "no_games": "ゲームなし",
+        "delete": "削除",
+        "confirm_delete": "削除の確認",
+        "delete_message": "AppID {0} を削除してもよろしいですか？\n\nこの操作は元に戻せません。",
+        "deleting": "削除中",
+        "delete_success": "削除成功",
+        "delete_failed": "削除失敗",
+        "search_and_add": "ゲームを検索して追加",
+        "game_name_or_appid": "ゲーム名またはAppID/Steamリンクを入力",
+        "search_button": "検索",
+        "add_options": "追加オプション",
+        "add_all_dlc": "すべてのDLCを追加",
+        "patch_depot_key": "デポットキーをパッチ",
+        "manifest_source": "マニフェストソース:",
+        "add_game": "ゲームを追加",
+        "steam_path": "Steamパス",
+        "steam_path_hint": "Steamインストールパスを選択、空の場合は自動検出",
+        "github_token": "GitHubパーソナルトークン",
+        "github_token_hint": "オプション、APIリクエスト制限を向上",
+        "basic_settings": "基本設定",
+        "appearance": "外観",
+        "theme_mode": "テーマモード",
+        "theme_color": "テーマカラー",
+        "language": "言語",
+        "save_settings": "設定を保存",
+        "about": "について",
+        "thanks": "謝辞",
+        "restart_required": "再起動が必要",
+        "language_changed": "言語が {0} に変更されました\n\n変更を適用するために今すぐアプリケーションを再起動しますか？",
+        "restart_steam_confirm": "Steamを再起動",
+        "restart_steam_message": "Steamを再起動してもよろしいですか？\n\n現在実行中のSteamを終了して再起動します。",
+        "total_games": "合計: {0} ゲーム | SteamTools: {1} | GreenLuma: {2}",
+        "load_failed": "読み込み失敗: {0}",
+        "reset_settings": "設定をリセット",
+        "reset_settings_message": "すべての設定をデフォルトにリセットしてもよろしいですか？\n\nこの操作は元に戻せません。",
+        "reset_success": "リセット成功",
+        "reset_success_message": "設定がデフォルトにリセットされました、ページを再読み込みしてください",
+        "reset_failed": "リセット失敗",
+        "restarting": "再起動中",
+        "restarting_message": "Steamを再起動中、しばらくお待ちください...",
+        "restart_success": "再起動成功",
+        "restart_success_message": "Steamが再起動されました",
+        "restart_failed": "再起動失敗",
+        "restart_failed_message": "Steamの再起動に失敗しました、手動で再起動してください",
+        "restart_error_message": "Steamの再起動エラー: {0}",
+        "application_config": "アプリケーション設定",
+        "debug_mode": "デバッグモード",
+        "debug_mode_hint": "詳細なデバッグログ出力を有効にする",
+        "enable_debug_log": "詳細なデバッグログ出力を有効にする",
+        "save_log_files": "ログファイルを保存",
+        "save_logs_to_file": "ログをファイルに保存",
+        "save_log_files_hint": "ログをファイルに保存",
+        "unlocker_mode": "アンロッカーモード",
+        "auto_detect": "自動検出",
+        "force_steamtools": "SteamToolsを強制",
+        "force_greenluma": "GreenLumaを強制",
+        "force_unlocker_hint": "指定されたアンロッカーを強制的に使用",
+        "download_timeout": "ダウンロードタイムアウト",
+        "download_timeout_hint": "マニフェストダウンロードのタイムアウト（秒）、ネットワークが遅い場合は増やしてください",
+        "theme_mode_hint": "アプリケーションテーマモードを選択",
+        "theme_color_hint": "テーマカラーを選択",
+        "language_hint": "アプリケーション言語を選択",
+        "window_effect": "ウィンドウエフェクト",
+        "window_effect_hint": "ウィンドウ背景エフェクトを選択",
+        "effect_none": "エフェクトなし",
+        "effect_mica": "マイカ",
+        "light_theme": "ライト",
+        "dark_theme": "ダーク",
+        "follow_system": "システムに従う",
+        "default_blue": "デフォルトブルー (#0078d4)",
+        "purple": "パープル (#9b4dca)",
+        "green": "グリーン (#10893e)",
+        "orange": "オレンジ (#ff8c00)",
+        "red": "レッド (#e81123)",
+        "pink": "ピンク (#e3008c)",
+        "tip_source_fail": "ヒント: ソースが失敗した場合は別のソースを試してください",
+        "auto_search_github": "GitHubを自動検索",
+        "swa_v2": "SWA V2",
+        "cysaw": "Cysaw",
+        "furcate": "Furcate",
+        "walftech": "Walftech",
+        "steamdatabase": "steamdatabase",
+        "steamautocracks_v2": "SteamAutoCracks V2 (キーのみ)",
+        "sudama": "Sudamaライブラリ (キーのみ)",
+        "buqiuren": "マニフェストヘルパーライブラリ (マニフェストのみ)",
+        "github_auiowu": "GitHub (Auiowu)",
+        "github_sac": "GitHub (SAC)",
+        "restart_steam_title": "Steamを再起動",
+        "restart_steam_confirm_message": "Steamを再起動してもよろしいですか？\n\n現在実行中のSteamを終了して再起動します。",
+        "tip": "ヒント",
+        "recognition_success": "認識成功",
+        "game_not_found": "ゲームが見つかりません",
+        "check_game_name": "ゲーム名を確認するか、AppIDをお試しください",
+        "search_failed": "検索失敗",
+        "game_selected": "ゲームが選択されました",
+        "add_success": "追加成功",
+        "add_success_content": "AppID {0} が正常に追加されました、Steamを再起動して有効にしてください",
+        "adding_game": "ゲームをライブラリに追加中...",
+        "please_wait_adding": "しばらくお待ちください、追加処理中です",
+        "process_failed": "処理失敗",
+        "check_logs": "ログを確認してください",
+        "check_details": "処理に失敗しました、詳細を確認するか別のソースをお試しください",
+        "auto_detect_placeholder": "自動検出の場合は空のままにしてください",
+        "token_placeholder": "オプション、APIリクエスト制限を向上",
+        "load_config_failed": "設定の読み込みに失敗しました",
+        "save_success": "保存成功",
+        "save_success_content": "設定が保存されました",
+        "save_failed": "保存失敗",
+        "unknown_error": "不明なエラー",
+        "data_process_failed": "データ処理に失敗しました",
+        "please_wait": "しばらくお待ちください",
+        "unknown_game": "不明なゲーム",
+        "reset_to_default": "デフォルトにリセット",
+        "about_title": "について",
+        "thanks_title": "謝辞",
+        "about_text": "Cai Install - Fluent Design バージョン\n\nバージョン: 1.3\n\nこれはPyQt6-Fluent-WidgetsをベースにしたモダンなSteamゲームアンロックツールです。\n\n機能:\n• Fluent Designスタイル\n• 複数のマニフェストソースをサポート\n• ゲーム検索と追加\n• インストール済みゲームの管理\n• テーマカスタマイズ\n\nプロジェクトURL: https://github.com/zhouchentao666/Cai-install-Fluent-GUI",
+        "thanks_text": "特別な感謝\n\n開発者:\n• zhouchentao666 - 開発者\n\nオープンソースプロジェクト:\n• PyQt6 - Qt6 Pythonバインディング\n• PyQt-Fluent-Widgets - Fluent Designコンポーネントライブラリ\n• Cai-install-Web-GUI - オリジナルプロジェクト作成者\n• httpx - 非同期HTTPクライアント\n\nマニフェストソース:\n• SWA V2\n• Cysaw\n• Furcate\n• Walftech\n• steamdatabase\n• SteamAutoCracks\n• Sudama\n• マニフェストヘルパーライブラリ\n\nこのプロジェクトに貢献してくれたすべての開発者とユーザーの皆様に感謝します！",
+    },
+    "zh_TW": {
+        "app_title": "流暢入库",
+        "home": "主頁",
+        "search": "搜尋入库",
+        "settings": "設定",
+        "default_page": "預設介面",
+        "default_page_hint": "選擇應用啟動後顯示的預設介面",
+        "default_page_home": "主頁",
+        "default_page_search": "搜尋入库",
+        "restart_steam": "重新啟動 Steam",
+        "installed_games": "已入库的遊戲",
+        "search_placeholder": "搜尋遊戲名稱或 AppID",
+        "loading": "載入中...",
+        "no_games": "暫無遊戲",
+        "delete": "刪除",
+        "confirm_delete": "確認刪除",
+        "delete_message": "確定要刪除 AppID {0} 嗎？\n\n此操作無法復原。",
+        "deleting": "正在刪除",
+        "delete_success": "刪除成功",
+        "delete_failed": "刪除失敗",
+        "search_and_add": "搜尋並入库遊戲",
+        "game_name_or_appid": "輸入遊戲名稱或 AppID / Steam 連結",
+        "search_button": "搜尋",
+        "add_options": "入库選項",
+        "add_all_dlc": "加入所有 DLC",
+        "patch_depot_key": "修補 Depot Key",
+        "manifest_source": "清單來源:",
+        "view_mode": "檢視模式",
+        "sort_mode": "排序",
+        "view_list": "清單",
+        "view_grid": "卡片",
+        "sort_default": "預設",
+        "sort_az": "A-Z",
+        "sort_za": "Z-A",
+        "add_game": "入库遊戲",
+        "steam_path": "Steam 路徑",
+        "steam_path_hint": "選擇Steam安裝路徑，留空則自動偵測",
+        "github_token": "GitHub 個人權杖",
+        "github_token_hint": "選填，用於提高API請求限制",
+        "basic_settings": "基本設定",
+        "appearance": "外觀",
+        "theme_mode": "佈景主題模式",
+        "theme_color": "佈景主題顏色",
+        "language": "語言",
+        "save_settings": "儲存設定",
+        "about": "關於",
+        "thanks": "感謝",
+        "restart_required": "需要重新啟動",
+        "language_changed": "語言已變更為 {0}\n\n是否立即重新啟動應用以套用變更？",
+        "restart_steam_confirm": "重新啟動 Steam",
+        "restart_steam_message": "確定要重新啟動 Steam 嗎？\n\n這將關閉目前執行中的 Steam 並重新啟動。",
+        "total_games": "共 {0} 個遊戲 | SteamTools: {1} | GreenLuma: {2}",
+        "load_failed": "載入失敗: {0}",
+        "reset_settings": "重設設定",
+        "reset_settings_message": "確定要將所有設定重設為預設值嗎？\n\n此操作無法復原。",
+        "reset_success": "重設成功",
+        "reset_success_message": "設定已重設為預設值，請重新載入頁面",
+        "reset_failed": "重設失敗",
+        "restarting": "正在重新啟動",
+        "restarting_message": "正在重新啟動 Steam，請稍候...",
+        "restart_success": "重新啟動成功",
+        "restart_success_message": "Steam 已重新啟動",
+        "restart_failed": "重新啟動失敗",
+        "restart_failed_message": "重新啟動 Steam 失敗，請手動重新啟動",
+        "restart_error_message": "重新啟動 Steam 時發生錯誤: {0}",
+        "application_config": "應用程式設定",
+        "debug_mode": "偵錯模式",
+        "debug_mode_hint": "啟用詳細的偵錯紀錄輸出",
+        "enable_debug_log": "啟用詳細的偵錯紀錄輸出",
+        "save_log_files": "儲存紀錄檔",
+        "save_logs_to_file": "將紀錄儲存至檔案中",
+        "save_log_files_hint": "將紀錄儲存至檔案中",
+        "unlocker_mode": "解鎖工具模式",
+        "auto_detect": "自動偵測",
+        "force_steamtools": "強制 SteamTools",
+        "force_greenluma": "強制 GreenLuma",
+        "force_unlocker_hint": "強制使用指定的解鎖工具",
+        "download_timeout": "入库逾時時間",
+        "download_timeout_hint": "下載清單的逾時時間（秒），網路較慢時可適度增加",
+        "theme_mode_hint": "選擇應用佈景主題模式",
+        "theme_color_hint": "選擇佈景主題顏色",
+        "language_hint": "選擇應用語言",
+        "window_effect": "視窗特效",
+        "window_effect_hint": "選擇視窗背景特效",
+        "effect_none": "無特效",
+        "effect_mica": "雲母",
+        "light_theme": "淺色",
+        "dark_theme": "深色",
+        "follow_system": "跟隨系統",
+        "default_blue": "預設藍 (#0078d4)",
+        "purple": "紫色 (#9b4dca)",
+        "green": "綠色 (#10893e)",
+        "orange": "橘色 (#ff8c00)",
+        "red": "紅色 (#e81123)",
+        "pink": "粉紅色 (#e3008c)",
+        "tip_source_fail": "提示: 若某個來源失敗，請嘗試其他來源",
+        "auto_search_github": "自動搜尋GitHub",
+        "swa_v2": "SWA V2",
+        "cysaw": "Cysaw",
+        "furcate": "Furcate",
+        "walftech": "Walftech",
+        "steamdatabase": "steamdatabase",
+        "steamautocracks_v2": "SteamAutoCracks V2 (僅金鑰)",
+        "sudama": "Sudama 資料庫 (僅金鑰)",
+        "buqiuren": "清單不求人資料庫 (僅清單)",
+        "github_auiowu": "GitHub (Auiowu)",
+        "github_sac": "GitHub (SAC)",
+        "restart_steam_title": "重新啟動 Steam",
+        "restart_steam_confirm_message": "確定要重新啟動 Steam 嗎？\n\n這將關閉目前執行中的 Steam 並重新啟動。",
+        
+        # 缺失的翻譯鍵
+        "tip": "提示",
+        "recognition_success": "辨識成功",
+        "game_not_found": "找不到相符的遊戲",
+        "check_game_name": "請檢查遊戲名稱或嘗試使用 AppID",
+        "search_failed": "搜尋失敗",
+        "game_selected": "遊戲已選擇",
+        "add_success": "入库成功",
+        "add_success_content": "AppID {0} 已成功入库，重新啟動 Steam 後生效",
+        "adding_game": "正在入库遊戲...",
+        "please_wait_adding": "請稍候，正在處理入库作業",
+        "process_failed": "處理失敗",
+        "check_logs": "請檢查紀錄",
+        "check_details": "處理失敗，請檢查詳細資訊或嘗試其他清單來源",
+        "auto_detect_placeholder": "留空則自動偵測",
+        "token_placeholder": "選填，用於提高 API 請求限制",
+        "load_config_failed": "載入設定失敗",
+        "save_success": "儲存成功",
+        "save_success_content": "設定已儲存",
+        "save_failed": "儲存失敗",
+        "unknown_error": "未知錯誤",
+        "data_process_failed": "處理資料失敗",
+        "please_wait": "請稍候",
+        "unknown_game": "未知遊戲",
+        "reset_to_default": "重設為預設",
+        "about_title": "關於",
+        "thanks_title": "感謝",
+        "about_text": "Cai Install - Fluent Design 版本\n\n版本: 1.3\n\n這是一套基於 PyQt6-Fluent-Widgets 的現代化 Steam 遊戲解鎖工具。\n\n功能特色:\n• Fluent Design 設計風格\n• 支援多種清單來源\n• 遊戲搜尋與入库\n• 已入库遊戲管理\n• 佈景主題自訂\n\n專案位址: https://github.com/zhouchentao666/Cai-install-Fluent-GUI",
+        "thanks_text": "特別感謝\n\n開發者:\n• zhouchentao666 - 製作人員\n\n開源專案:\n• PyQt6 - Qt6 Python 綁定\n• PyQt-Fluent-Widgets - Fluent Design 元件庫\n• Cai-install-Web-GUI - 原始專案作者\n• httpx - 非同步 HTTP 用戶端\n\n清單來源提供:\n• SWA V2\n• Cysaw\n• Furcate\n• Walftech\n• steamdatabase\n• SteamAutoCracks\n• Sudama\n• 清單不求人\n\n感謝所有為本專案貢獻的開發者與使用者！",
+    },
 }
 
 # 全局语言变量
@@ -425,6 +1129,96 @@ class GameCard(CardWidget):
                 parent.delete_game(self.appid, self.source_type)
 
 
+class GameCardGrid(CardWidget):
+    """游戏卡片组件 - 网格视图模式"""
+    
+    def __init__(self, appid, game_name, source_type, parent=None):
+        super().__init__(parent)
+        self.appid = appid
+        self.game_name = game_name
+        self.source_type = source_type  # 'st' 或 'gl'
+        
+        # 网络管理器（先初始化）
+        self.network_manager = QNetworkAccessManager(self)
+        self.network_manager.finished.connect(self.on_cover_loaded)
+        
+        # 创建垂直布局
+        self.vBoxLayout = QVBoxLayout(self)
+        self.vBoxLayout.setContentsMargins(10, 10, 10, 10)
+        self.vBoxLayout.setSpacing(8)
+        
+        # 游戏封面
+        self.coverLabel = QLabel(self)
+        self.coverLabel.setFixedSize(180, 84)
+        self.coverLabel.setScaledContents(True)
+        self.coverLabel.setStyleSheet("border-radius: 4px; background: #2a2a2a;")
+        
+        # 游戏标题
+        display_name = game_name
+        if not game_name or game_name == '名称未找到' or game_name == '获取失败' or game_name == tr('unknown_game'):
+            display_name = f"AppID: {appid}"
+        self.titleLabel = BodyLabel(display_name, self)
+        self.titleLabel.setWordWrap(True)
+        self.titleLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # 设置标题的最大高度以允许多行显示，但限制过度增长
+        self.titleLabel.setMaximumHeight(60)  # 大约3行文字
+        
+        # AppID 和来源
+        source_text = "SteamTools" if source_type == "st" else "GreenLuma"
+        self.infoLabel = CaptionLabel(f"AppID: {appid} | {source_text}", self)
+        self.infoLabel.setTextColor("#606060", "#d2d2d2")
+        self.infoLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        # 删除按钮
+        self.deleteButton = TransparentToolButton(FluentIcon.DELETE, self)
+        self.deleteButton.setFixedSize(32, 32)
+        self.deleteButton.setToolTip(tr("delete"))
+        self.deleteButton.clicked.connect(self.on_delete_clicked)
+        
+        # 设置布局
+        self.setFixedSize(200, 250)  # 稍微减小高度
+        
+        # 添加组件到布局 - 优化间距
+        self.vBoxLayout.addWidget(self.coverLabel, 0, Qt.AlignmentFlag.AlignHCenter)
+        self.vBoxLayout.addSpacing(5)  # 封面和标题之间的小间距
+        self.vBoxLayout.addWidget(self.titleLabel, 0, Qt.AlignmentFlag.AlignHCenter)
+        self.vBoxLayout.addSpacing(3)  # 标题和信息之间的小间距
+        self.vBoxLayout.addWidget(self.infoLabel, 0, Qt.AlignmentFlag.AlignHCenter)
+        self.vBoxLayout.addSpacing(8)  # 信息和按钮之间的适中间距
+        self.vBoxLayout.addWidget(self.deleteButton, 0, Qt.AlignmentFlag.AlignHCenter)
+        self.vBoxLayout.addSpacing(5)  # 底部小间距
+        
+        # 加载封面（最后执行）
+        self.load_cover()
+    
+    def load_cover(self):
+        """加载游戏封面"""
+        # Steam 封面 URL
+        cover_url = f"https://cdn.akamai.steamstatic.com/steam/apps/{self.appid}/header.jpg"
+        request = QNetworkRequest(QUrl(cover_url))
+        self.network_manager.get(request)
+    
+    @pyqtSlot(QNetworkReply)
+    def on_cover_loaded(self, reply):
+        """封面加载完成"""
+        if reply.error() == QNetworkReply.NetworkError.NoError:
+            data = reply.readAll()
+            pixmap = QPixmap()
+            if pixmap.loadFromData(data):
+                self.coverLabel.setPixmap(pixmap)
+        reply.deleteLater()
+    
+    def on_delete_clicked(self):
+        """删除按钮点击"""
+        # 发送信号给父页面
+        if self.parent():
+            parent = self.parent()
+            while parent and not isinstance(parent, HomePage):
+                parent = parent.parent()
+            if parent:
+                parent.delete_game(self.appid, self.source_type)
+
+
 class AsyncWorker(QThread):
     """异步工作线程"""
     finished = pyqtSignal(object)
@@ -497,22 +1291,61 @@ class HomePage(ScrollArea):
         header_layout.addWidget(self.refresh_button)
         self.mainLayout.addLayout(header_layout)
         
-        # 搜索框
-        search_layout = QHBoxLayout()
+        # 搜索框和视图/排序选项
+        search_row_layout = QHBoxLayout()
+        
+        # 搜索输入框
         self.filter_input = SearchLineEdit(self)
         self.filter_input.setPlaceholderText(tr("search_placeholder"))
         self.filter_input.setFixedHeight(35)
         self.filter_input.textChanged.connect(self.on_filter_changed)
         self.filter_input.searchSignal.connect(self.on_filter_changed)
         self.filter_input.clearSignal.connect(self.on_filter_cleared)
-        search_layout.addWidget(self.filter_input)
-        self.mainLayout.addLayout(search_layout)
+        search_row_layout.addWidget(self.filter_input)
         
-        # 游戏卡片容器
+        # 视图模式选择
+        self.view_mode_label = QLabel(tr("view_mode") + ":", self)
+        self.view_mode_combo = ComboBox(self)
+        self.view_mode_combo.addItems([tr("view_list"), tr("view_grid")])
+        self.view_mode_combo.setCurrentIndex(0)
+        self.view_mode_combo.setFixedWidth(100)
+        self.view_mode_combo.currentIndexChanged.connect(self.on_view_mode_changed)
+        search_row_layout.addWidget(self.view_mode_label)
+        search_row_layout.addWidget(self.view_mode_combo)
+        search_row_layout.addSpacing(10)
+        
+        # 排序选择
+        self.sort_label = QLabel(tr("sort_mode") + ":", self)
+        self.sort_combo = ComboBox(self)
+        self.sort_combo.addItems([tr("sort_default"), tr("sort_az"), tr("sort_za")])
+        self.sort_combo.setCurrentIndex(0)
+        self.sort_combo.setFixedWidth(100)
+        self.sort_combo.currentIndexChanged.connect(self.on_sort_changed)
+        search_row_layout.addWidget(self.sort_label)
+        search_row_layout.addWidget(self.sort_combo)
+        
+        self.mainLayout.addLayout(search_row_layout)
+        
+        # 游戏卡片容器 - 支持列表和卡片视图
         self.card_container = QWidget(self)
-        self.card_layout = QVBoxLayout(self.card_container)
-        self.card_layout.setContentsMargins(0, 0, 0, 0)
-        self.card_layout.setSpacing(10)
+        self.list_layout = QVBoxLayout()
+        self.list_layout.setContentsMargins(0, 0, 0, 0)
+        self.list_layout.setSpacing(10)
+        
+        # 卡片视图使用网格布局
+        self.grid_layout = FlowLayout()
+        self.grid_layout.setContentsMargins(0, 0, 0, 0)
+        self.grid_layout.setSpacing(15)
+        
+        # 先读取保存的视图模式再设置布局，避免 Qt 忽略重复 setLayout 调用
+        self.current_view_mode = self._read_view_mode_config("home_view_mode")
+        if self.current_view_mode == "grid":
+            self.card_layout = self.grid_layout
+            self.card_container.setLayout(self.grid_layout)
+        else:
+            self.current_view_mode = "list"
+            self.card_layout = self.list_layout
+            self.card_container.setLayout(self.list_layout)
         
         self.mainLayout.addWidget(self.card_container)
         self.mainLayout.addStretch(1)
@@ -526,6 +1359,11 @@ class HomePage(ScrollArea):
         self.worker = None
         self.game_cards = []
         self.all_games_data = []  # 存储所有游戏数据用于过滤
+        self.filtered_games_data = []  # 存储过滤后的游戏数据
+        
+        # 加载视图和排序设置（仅同步 combo UI，布局已在上方设置）
+        self.load_view_mode_preference()
+        self.load_sort_mode_preference()
     
     def showEvent(self, event):
         """页面显示时加载游戏列表"""
@@ -608,8 +1446,11 @@ class HomePage(ScrollArea):
             card.deleteLater()
         self.game_cards.clear()
         
+        # 根据排序选项对游戏数据进行排序
+        sorted_games = self.sort_games(games_data)
+        
         # 添加卡片
-        for source_type, game in games_data:
+        for source_type, game in sorted_games:
             appid = game.get('appid', 'N/A')
             game_name = game.get('game_name', '')
             
@@ -617,15 +1458,80 @@ class HomePage(ScrollArea):
             if not game_name or game_name == '名称未找到' or game_name == '获取失败':
                 game_name = f"AppID {appid}"
             
-            card = GameCard(appid, game_name, source_type, self)
+            # 根据视图模式创建不同类型的卡片
+            if self.current_view_mode == "grid":
+                card = GameCardGrid(appid, game_name, source_type, self)
+            else:
+                card = GameCard(appid, game_name, source_type, self)
+            
             self.card_layout.addWidget(card)
             self.game_cards.append(card)
         
-        if not games_data:
+        if not sorted_games:
             empty_label = BodyLabel(tr("no_games"), self)
             empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.card_layout.addWidget(empty_label)
             self.game_cards.append(empty_label)
+    
+
+    
+    def sort_games(self, games_data):
+        """根据排序选项对游戏进行排序"""
+        sort_mode = self.sort_combo.currentText()
+        
+        if sort_mode == tr("sort_az"):
+            return sorted(games_data, key=lambda x: x[1].get('game_name', f"AppID {x[1].get('appid', '0')}"))
+        elif sort_mode == tr("sort_za"):
+            return sorted(games_data, key=lambda x: x[1].get('game_name', f"AppID {x[1].get('appid', '0')}"), reverse=True)
+        else:  # 默认 - 按AppID降序
+            return sorted(games_data, key=lambda x: int(x[1].get('appid', '0')) if x[1].get('appid', '0').isdigit() else 0, reverse=True)
+    
+    def on_view_mode_changed(self):
+        """视图模式改变"""
+        view_mode = self.view_mode_combo.currentText()
+        
+        # 保存当前过滤状态
+        current_filter = self.filter_input.text()
+        
+        # 移除现有容器
+        self.mainLayout.removeWidget(self.card_container)
+        self.card_container.deleteLater()
+        
+        # 创建新的容器和布局
+        self.card_container = QWidget(self)
+        
+        if view_mode == tr("view_list"):
+            self.current_view_mode = "list"
+            self.list_layout = QVBoxLayout()  # 创建新布局
+            self.list_layout.setContentsMargins(0, 0, 0, 0)
+            self.list_layout.setSpacing(10)
+            self.card_layout = self.list_layout
+            self.card_container.setLayout(self.list_layout)
+        else:  # 卡片视图
+            self.current_view_mode = "grid"
+            self.grid_layout = FlowLayout()  # 创建新布局
+            self.grid_layout.setContentsMargins(0, 0, 0, 0)
+            self.grid_layout.setSpacing(15)
+            self.card_layout = self.grid_layout
+            self.card_container.setLayout(self.grid_layout)
+        
+        # 重新添加到布局
+        self.mainLayout.insertWidget(2, self.card_container)
+        
+        # 保存视图模式偏好
+        self.save_view_mode_preference()
+        
+        # 重新显示当前游戏
+        self.filter_input.setText(current_filter)
+        self.on_filter_changed()
+    
+    def on_sort_changed(self):
+        """排序方式改变"""
+        # 保存排序模式偏好
+        self.save_sort_mode_preference()
+        
+        # 重新显示当前游戏
+        self.on_filter_changed()
     
     def on_filter_changed(self):
         """搜索过滤"""
@@ -719,6 +1625,104 @@ class HomePage(ScrollArea):
             position=InfoBarPosition.TOP
         )
     
+    def save_view_mode_preference(self):
+        """保存视图模式设置"""
+        try:
+            config_path = Path.cwd() / 'config.json'
+            import json
+            
+            # 读取现有配置
+            if config_path.exists():
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    config = json.load(f)
+            else:
+                from backend import DEFAULT_CONFIG
+                config = DEFAULT_CONFIG.copy()
+            
+            # 保存视图模式
+            config["home_view_mode"] = self.current_view_mode
+            
+            # 保存配置
+            with open(config_path, 'w', encoding='utf-8') as f:
+                json.dump(config, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"保存视图模式失败: {e}")
+    
+    def _read_view_mode_config(self, key):
+        """从配置文件读取视图模式，不操作任何 UI"""
+        try:
+            import json
+            config_path = Path.cwd() / 'config.json'
+            if config_path.exists():
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    return json.load(f).get(key, "list")
+        except Exception:
+            pass
+        return "list"
+
+    def load_view_mode_preference(self):
+        """同步 combo UI（布局已在 __init__ 中正确设置）"""
+        try:
+            self.view_mode_combo.currentIndexChanged.disconnect(self.on_view_mode_changed)
+            self.view_mode_combo.setCurrentIndex(0 if self.current_view_mode == "list" else 1)
+            self.view_mode_combo.currentIndexChanged.connect(self.on_view_mode_changed)
+        except Exception as e:
+            print(f"加载视图模式偏好失败: {e}")
+        """保存排序模式设置"""
+        try:
+            config_path = Path.cwd() / 'config.json'
+            import json
+            
+            # 读取现有配置
+            if config_path.exists():
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    config = json.load(f)
+            else:
+                from backend import DEFAULT_CONFIG
+                config = DEFAULT_CONFIG.copy()
+            
+            # 保存排序模式
+            sort_mode_text = self.sort_combo.currentText()
+            if sort_mode_text == tr("sort_az"):
+                config["home_sort_mode"] = "az"
+            elif sort_mode_text == tr("sort_za"):
+                config["home_sort_mode"] = "za"
+            else:
+                config["home_sort_mode"] = "default"
+            
+            # 保存配置
+            with open(config_path, 'w', encoding='utf-8') as f:
+                json.dump(config, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"保存排序模式失败: {e}")
+    
+    def load_sort_mode_preference(self):
+        """加载排序模式设置"""
+        try:
+            config_path = Path.cwd() / 'config.json'
+            import json
+            
+            if config_path.exists():
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    config = json.load(f)
+                
+                # 获取保存的排序模式
+                saved_sort_mode = config.get("home_sort_mode", "default")
+                
+                # 更新UI
+                # 断开信号，避免触发保存
+                self.sort_combo.currentIndexChanged.disconnect(self.on_sort_changed)
+                if saved_sort_mode == "az":
+                    self.sort_combo.setCurrentIndex(1)
+                elif saved_sort_mode == "za":
+                    self.sort_combo.setCurrentIndex(2)
+                else:
+                    self.sort_combo.setCurrentIndex(0)
+                self.sort_combo.currentIndexChanged.connect(self.on_sort_changed)
+                
+        except Exception as e:
+            print(f"加载排序模式偏好失败: {e}")
+    
     @pyqtSlot(str)
     def on_load_error(self, error):
         """加载失败"""
@@ -807,6 +1811,89 @@ class SearchResultCard(CardWidget):
                 parent.unlock_game_direct(self.appid, self.game_name)
 
 
+class SearchResultCardGrid(CardWidget):
+    """搜索结果卡片组件 - 网格视图模式"""
+    
+    def __init__(self, appid, game_name, parent=None):
+        super().__init__(parent)
+        self.appid = appid
+        self.game_name = game_name
+        
+        # 网络管理器
+        self.network_manager = QNetworkAccessManager(self)
+        self.network_manager.finished.connect(self.on_cover_loaded)
+        
+        # 创建垂直布局
+        self.vBoxLayout = QVBoxLayout(self)
+        self.vBoxLayout.setContentsMargins(10, 10, 10, 10)
+        self.vBoxLayout.setSpacing(8)
+        
+        # 游戏封面
+        self.coverLabel = QLabel(self)
+        self.coverLabel.setFixedSize(180, 84)
+        self.coverLabel.setScaledContents(True)
+        self.coverLabel.setStyleSheet("border-radius: 4px; background: #2a2a2a;")
+        
+        # 游戏标题
+        self.titleLabel = BodyLabel(game_name, self)
+        self.titleLabel.setWordWrap(True)
+        self.titleLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # 设置标题的最大高度以允许多行显示，但限制过度增长
+        self.titleLabel.setMaximumHeight(60)  # 大约3行文字
+        
+        # AppID
+        self.infoLabel = CaptionLabel(f"AppID: {appid}", self)
+        self.infoLabel.setTextColor("#606060", "#d2d2d2")
+        self.infoLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        # 入库按钮
+        self.selectButton = PrimaryPushButton("入库", self)
+        self.selectButton.setFixedSize(80, 32)
+        self.selectButton.clicked.connect(self.on_select_clicked)
+        
+        # 设置布局
+        self.setFixedSize(200, 250)  # 稍微减小高度
+        
+        # 添加组件到布局 - 优化间距
+        self.vBoxLayout.addWidget(self.coverLabel, 0, Qt.AlignmentFlag.AlignHCenter)
+        self.vBoxLayout.addSpacing(5)  # 封面和标题之间的小间距
+        self.vBoxLayout.addWidget(self.titleLabel, 0, Qt.AlignmentFlag.AlignHCenter)
+        self.vBoxLayout.addSpacing(3)  # 标题和信息之间的小间距
+        self.vBoxLayout.addWidget(self.infoLabel, 0, Qt.AlignmentFlag.AlignHCenter)
+        self.vBoxLayout.addSpacing(8)  # 信息和按钮之间的适中间距
+        self.vBoxLayout.addWidget(self.selectButton, 0, Qt.AlignmentFlag.AlignHCenter)
+        self.vBoxLayout.addSpacing(5)  # 底部小间距
+        
+        # 加载封面
+        self.load_cover()
+    
+    def load_cover(self):
+        """加载游戏封面"""
+        cover_url = f"https://cdn.akamai.steamstatic.com/steam/apps/{self.appid}/header.jpg"
+        request = QNetworkRequest(QUrl(cover_url))
+        self.network_manager.get(request)
+    
+    @pyqtSlot(QNetworkReply)
+    def on_cover_loaded(self, reply):
+        """封面加载完成"""
+        if reply.error() == QNetworkReply.NetworkError.NoError:
+            data = reply.readAll()
+            pixmap = QPixmap()
+            if pixmap.loadFromData(data):
+                self.coverLabel.setPixmap(pixmap)
+        reply.deleteLater()
+    
+    def on_select_clicked(self):
+        """选择按钮点击"""
+        # 发送信号给父页面
+        if self.parent():
+            parent = self.parent()
+            while parent and not isinstance(parent, SearchPage):
+                parent = parent.parent()
+            if parent:
+                parent.unlock_game_direct(self.appid, self.game_name)
+
+
 class SearchPage(ScrollArea):
     """搜索和入库页面"""
     
@@ -823,40 +1910,106 @@ class SearchPage(ScrollArea):
         layout = QVBoxLayout(container)
         layout.setContentsMargins(30, 30, 30, 30)
         layout.setSpacing(20)
+        self.main_layout = layout  # 保存布局引用
         
         # 标题
         title = SubtitleLabel(tr("search_and_add"), self)
         layout.addWidget(title)
         
-        # 搜索输入框（无容器）
+        # 搜索输入框和视图/排序选项
+        search_row_layout = QHBoxLayout()
+        
+        # 搜索输入框
         self.search_input = SearchLineEdit(self)
         self.search_input.setPlaceholderText(tr("game_name_or_appid"))
         self.search_input.setFixedHeight(40)
         self.search_input.searchSignal.connect(self.on_search)
         self.search_input.textChanged.connect(self.on_search_text_changed)
-        layout.addWidget(self.search_input)
+        search_row_layout.addWidget(self.search_input)
         
-        # 搜索选项（放在搜索框旁边）
+        # 视图模式选择
+        self.view_mode_label = QLabel(tr("view_mode") + ":", self)
+        self.view_mode_combo = ComboBox(self)
+        self.view_mode_combo.addItems([tr("view_list"), tr("view_grid")])
+        self.view_mode_combo.setCurrentIndex(0)
+        self.view_mode_combo.setFixedWidth(100)
+        self.view_mode_combo.currentIndexChanged.connect(self.on_view_mode_changed)
+        search_row_layout.addWidget(self.view_mode_label)
+        search_row_layout.addWidget(self.view_mode_combo)
+        search_row_layout.addSpacing(10)
+        
+        # 排序选择
+        self.sort_label = QLabel(tr("sort_mode") + ":", self)
+        self.sort_combo = ComboBox(self)
+        self.sort_combo.addItems([tr("sort_default"), tr("sort_az"), tr("sort_za")])
+        self.sort_combo.setCurrentIndex(0)
+        self.sort_combo.setFixedWidth(100)
+        self.sort_combo.currentIndexChanged.connect(self.on_sort_changed)
+        search_row_layout.addWidget(self.sort_label)
+        search_row_layout.addWidget(self.sort_combo)
+        
+        layout.addLayout(search_row_layout)
+        
+        # 搜索选项（清单源、DLC选项等）
         options_layout = QHBoxLayout()
+        
+        # 清单源选择
+        self.manifest_source_label = QLabel(tr("manifest_source"), self)
+        self.manifest_source_combo = ComboBox(self)
+        self.manifest_source_combo.addItems([
+            "DLCSteamAutoCracks V2",
+            "SWA V2 (printedwaste)", 
+            "Cysaw",
+            "Furcate", 
+            "Walftech",
+            "SteamDatabase",
+            "Sudama",
+            "清单不求人"
+        ])
+        self.manifest_source_combo.setCurrentIndex(0)  # 默认选择 SteamAutoCracks V2
+        self.manifest_source_combo.setFixedWidth(200)
+        self.manifest_source_combo.currentIndexChanged.connect(self.on_manifest_source_changed)
+        options_layout.addWidget(self.manifest_source_label)
+        options_layout.addWidget(self.manifest_source_combo)
+        options_layout.addSpacing(20)
         
         # 选项
         self.add_dlc_check = CheckBox(tr("add_all_dlc"), self)
         self.add_dlc_check.setChecked(False)
+        self.add_dlc_check.stateChanged.connect(self.on_add_dlc_changed)
         options_layout.addWidget(self.add_dlc_check)
         
         self.patch_key_check = CheckBox(tr("patch_depot_key"), self)
         self.patch_key_check.setChecked(False)
+        self.patch_key_check.stateChanged.connect(self.on_patch_key_changed)
         options_layout.addWidget(self.patch_key_check)
         
         options_layout.addStretch(1)
         layout.addLayout(options_layout)
         
-        # 搜索结果卡片直接添加到主布局（删除所有容器）
-        self.results_layout = QVBoxLayout()
-        self.results_layout.setContentsMargins(0, 0, 0, 0)
-        self.results_layout.setSpacing(10)
+        # 搜索结果卡片布局 - 支持列表和卡片视图
+        self.list_results_layout = QVBoxLayout()
+        self.list_results_layout.setContentsMargins(0, 0, 0, 0)
+        self.list_results_layout.setSpacing(10)
         
-        layout.addLayout(self.results_layout)
+        # 卡片视图使用网格布局
+        self.grid_results_layout = FlowLayout()
+        self.grid_results_layout.setContentsMargins(0, 0, 0, 0)
+        self.grid_results_layout.setSpacing(15)
+        
+        # 创建容器部件来管理布局切换
+        # 先读取保存的视图模式再设置布局，避免 Qt 忽略重复 setLayout 调用
+        self.results_container = QWidget(self)
+        self.current_view_mode = self._read_view_mode_config("search_view_mode")
+        if self.current_view_mode == "grid":
+            self.results_layout = self.grid_results_layout
+            self.results_container.setLayout(self.grid_results_layout)
+        else:
+            self.current_view_mode = "list"
+            self.results_layout = self.list_results_layout
+            self.results_container.setLayout(self.list_results_layout)
+        
+        layout.addWidget(self.results_container)
         layout.addStretch(1)
         
         # 设置透明背景
@@ -868,6 +2021,144 @@ class SearchPage(ScrollArea):
         self.unlock_worker = None
         self.result_cards = []
         self.search_timer = None
+        self.search_results = []  # 存储搜索结果用于排序
+        
+        # 加载保存的清单源选择
+        self.load_manifest_source_preference()
+        
+        # 加载视图和排序设置
+        self.load_view_mode_preference()
+        self.load_sort_mode_preference()
+        
+        # 加载DLC和修补选项状态
+        self.load_add_dlc_preference()
+        self.load_patch_key_preference()
+    
+    def on_add_dlc_changed(self):
+        """DLC选项改变时保存状态"""
+        self.save_add_dlc_preference()
+    
+    def on_patch_key_changed(self):
+        """修补Key选项改变时保存状态"""
+        self.save_patch_key_preference()
+    
+    def save_add_dlc_preference(self):
+        """保存DLC选项状态"""
+        try:
+            config_path = Path.cwd() / 'config.json'
+            import json
+            
+            # 读取现有配置
+            if config_path.exists():
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    config = json.load(f)
+            else:
+                from backend import DEFAULT_CONFIG
+                config = DEFAULT_CONFIG.copy()
+            
+            # 保存DLC选项状态
+            config["add_all_dlc_default"] = self.add_dlc_check.isChecked()
+            
+            # 保存配置
+            with open(config_path, 'w', encoding='utf-8') as f:
+                json.dump(config, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"保存DLC选项失败: {e}")
+    
+    def load_add_dlc_preference(self):
+        """加载DLC选项状态"""
+        try:
+            config_path = Path.cwd() / 'config.json'
+            import json
+            
+            # 读取配置
+            if config_path.exists():
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    config = json.load(f)
+                
+                # 获取保存的DLC选项状态
+                add_dlc_default = config.get("add_all_dlc_default", False)
+                self.add_dlc_check.setChecked(add_dlc_default)
+                
+        except Exception as e:
+            print(f"加载DLC选项失败: {e}")
+    
+    def save_patch_key_preference(self):
+        """保存修补Key选项状态"""
+        try:
+            config_path = Path.cwd() / 'config.json'
+            import json
+            
+            # 读取现有配置
+            if config_path.exists():
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    config = json.load(f)
+            else:
+                from backend import DEFAULT_CONFIG
+                config = DEFAULT_CONFIG.copy()
+            
+            # 保存修补Key选项状态
+            config["patch_depot_key_default"] = self.patch_key_check.isChecked()
+            
+            # 保存配置
+            with open(config_path, 'w', encoding='utf-8') as f:
+                json.dump(config, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"保存修补Key选项失败: {e}")
+    
+    def load_patch_key_preference(self):
+        """加载修补Key选项状态"""
+        try:
+            config_path = Path.cwd() / 'config.json'
+            import json
+            
+            # 读取配置
+            if config_path.exists():
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    config = json.load(f)
+                
+                # 获取保存的修补Key选项状态
+                patch_key_default = config.get("patch_depot_key_default", False)
+                self.patch_key_check.setChecked(patch_key_default)
+                
+        except Exception as e:
+            print(f"加载修补Key选项失败: {e}")
+    
+    def __del__(self):
+        """析构函数，确保清理所有worker"""
+        self.cleanup_workers()
+    
+    def cleanup_workers(self):
+        """清理所有worker线程"""
+        # 清理搜索worker
+        if hasattr(self, 'search_worker') and self.search_worker:
+            if self.search_worker.isRunning():
+                self.search_worker.quit()
+                self.search_worker.wait(1000)  # 最多等待1秒
+            self.search_worker.deleteLater()
+            self.search_worker = None
+        
+        # 清理解锁worker
+        if hasattr(self, 'unlock_worker') and self.unlock_worker:
+            if self.unlock_worker.isRunning():
+                self.unlock_worker.quit()
+                self.unlock_worker.wait(1000)  # 最多等待1秒
+            self.unlock_worker.deleteLater()
+            self.unlock_worker = None
+        
+        # 清理清单源保存worker
+        if hasattr(self, '_manifest_worker') and self._manifest_worker:
+            if self._manifest_worker.isRunning():
+                self._manifest_worker.quit()
+                self._manifest_worker.wait(1000)  # 最多等待1秒
+            self._manifest_worker.deleteLater()
+            self._manifest_worker = None
+        
+        # 清理定时器
+        if hasattr(self, 'search_timer') and self.search_timer:
+            self.search_timer.stop()
+            self.search_timer.deleteLater()
+            self.search_timer = None
     
     def on_search_text_changed(self):
         """搜索文本变化时自动搜索"""
@@ -882,6 +2173,199 @@ class SearchPage(ScrollArea):
         
         # 延迟500ms搜索
         self.search_timer.start(500)
+    
+    def on_manifest_source_changed(self):
+        """清单源选择改变时保存偏好"""
+        self.save_manifest_source_preference()
+    
+    def save_manifest_source_preference(self):
+        """保存清单源选择偏好"""
+        async def _save():
+            config_path = Path.cwd() / 'config.json'
+            import json
+            
+            # 读取现有配置
+            if config_path.exists():
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    config = json.load(f)
+            else:
+                from backend import DEFAULT_CONFIG
+                config = DEFAULT_CONFIG.copy()
+            
+            # 保存清单源选择
+            source_mapping = {
+                0: "steamautocracks_v2",
+                1: "printedwaste", 
+                2: "cysaw",
+                3: "furcate",
+                4: "walftech",
+                5: "steamdatabase",
+                6: "sudama",
+                7: "buqiuren"
+            }
+            config["default_manifest_source"] = source_mapping.get(self.manifest_source_combo.currentIndex(), "steamautocracks_v2")
+            
+            # 保存配置
+            with open(config_path, 'w', encoding='utf-8') as f:
+                json.dump(config, f, indent=2, ensure_ascii=False)
+        
+        # 使用异步worker保存，并确保正确清理
+        if hasattr(self, '_manifest_worker') and self._manifest_worker and self._manifest_worker.isRunning():
+            self._manifest_worker.quit()
+            self._manifest_worker.wait()
+        
+        self._manifest_worker = AsyncWorker(_save())
+        self._manifest_worker.finished.connect(self._on_manifest_save_complete)
+        self._manifest_worker.error.connect(self._on_manifest_save_error)
+        self._manifest_worker.start()
+    
+    def _on_manifest_save_complete(self, result):
+        """清单源保存完成"""
+        # 清理worker引用
+        if hasattr(self, '_manifest_worker'):
+            self._manifest_worker.deleteLater()
+            self._manifest_worker = None
+    
+    def _on_manifest_save_error(self, error):
+        """清单源保存失败"""
+        print(f"保存清单源偏好失败: {error}")
+        # 清理worker引用
+        if hasattr(self, '_manifest_worker'):
+            self._manifest_worker.deleteLater()
+            self._manifest_worker = None
+    
+    def load_manifest_source_preference(self):
+        """加载清单源选择偏好"""
+        try:
+            config_path = Path.cwd() / 'config.json'
+            import json
+            
+            # 读取配置
+            if config_path.exists():
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    config = json.load(f)
+                
+                # 获取保存的清单源
+                saved_source = config.get("default_manifest_source", "steamautocracks_v2")
+                
+                # 映射到combo索引
+                source_mapping = {
+                    "steamautocracks_v2": 0,
+                    "printedwaste": 1, 
+                    "cysaw": 2,
+                    "furcate": 3,
+                    "walftech": 4,
+                    "steamdatabase": 5,
+                    "sudama": 6,
+                    "buqiuren": 7
+                }
+                
+                index = source_mapping.get(saved_source, 0)
+                # 断开信号，避免触发保存
+                self.manifest_source_combo.currentIndexChanged.disconnect(self.on_manifest_source_changed)
+                self.manifest_source_combo.setCurrentIndex(index)
+                self.manifest_source_combo.currentIndexChanged.connect(self.on_manifest_source_changed)
+                
+        except Exception as e:
+            print(f"加载清单源偏好失败: {e}")
+    
+    def save_view_mode_preference(self):
+        """保存视图模式设置"""
+        try:
+            config_path = Path.cwd() / 'config.json'
+            import json
+            
+            # 读取现有配置
+            if config_path.exists():
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    config = json.load(f)
+            else:
+                from backend import DEFAULT_CONFIG
+                config = DEFAULT_CONFIG.copy()
+            
+            # 保存视图模式
+            config["search_view_mode"] = self.current_view_mode
+            
+            # 保存配置
+            with open(config_path, 'w', encoding='utf-8') as f:
+                json.dump(config, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"保存视图模式失败: {e}")
+    
+    def _read_view_mode_config(self, key):
+        """从配置文件读取视图模式，不操作任何 UI"""
+        try:
+            import json
+            config_path = Path.cwd() / 'config.json'
+            if config_path.exists():
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    return json.load(f).get(key, "list")
+        except Exception:
+            pass
+        return "list"
+
+    def load_view_mode_preference(self):
+        """同步 combo UI（布局已在 __init__ 中正确设置）"""
+        try:
+            self.view_mode_combo.currentIndexChanged.disconnect(self.on_view_mode_changed)
+            self.view_mode_combo.setCurrentIndex(0 if self.current_view_mode == "list" else 1)
+            self.view_mode_combo.currentIndexChanged.connect(self.on_view_mode_changed)
+        except Exception as e:
+            print(f"加载视图模式偏好失败: {e}")
+        """保存排序模式设置"""
+        try:
+            config_path = Path.cwd() / 'config.json'
+            import json
+            
+            # 读取现有配置
+            if config_path.exists():
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    config = json.load(f)
+            else:
+                from backend import DEFAULT_CONFIG
+                config = DEFAULT_CONFIG.copy()
+            
+            # 保存排序模式
+            sort_mode_text = self.sort_combo.currentText()
+            if sort_mode_text == tr("sort_az"):
+                config["search_sort_mode"] = "az"
+            elif sort_mode_text == tr("sort_za"):
+                config["search_sort_mode"] = "za"
+            else:
+                config["search_sort_mode"] = "default"
+            
+            # 保存配置
+            with open(config_path, 'w', encoding='utf-8') as f:
+                json.dump(config, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"保存排序模式失败: {e}")
+    
+    def load_sort_mode_preference(self):
+        """加载排序模式设置"""
+        try:
+            config_path = Path.cwd() / 'config.json'
+            import json
+            
+            if config_path.exists():
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    config = json.load(f)
+                
+                # 获取保存的排序模式
+                saved_sort_mode = config.get("search_sort_mode", "default")
+                
+                # 更新UI
+                # 断开信号，避免触发保存
+                self.sort_combo.currentIndexChanged.disconnect(self.on_sort_changed)
+                if saved_sort_mode == "az":
+                    self.sort_combo.setCurrentIndex(1)
+                elif saved_sort_mode == "za":
+                    self.sort_combo.setCurrentIndex(2)
+                else:
+                    self.sort_combo.setCurrentIndex(0)
+                self.sort_combo.currentIndexChanged.connect(self.on_sort_changed)
+                
+        except Exception as e:
+            print(f"加载排序模式偏好失败: {e}")
     
     def on_search(self):
         """搜索游戏"""
@@ -915,6 +2399,11 @@ class SearchPage(ScrollArea):
                     results = await backend.find_appid_by_name(query)
                     return {'type': 'search', 'results': results}
         
+        # 确保之前的搜索worker已清理
+        if hasattr(self, 'search_worker') and self.search_worker and self.search_worker.isRunning():
+            self.search_worker.quit()
+            self.search_worker.wait()
+        
         self.search_worker = AsyncWorker(_search())
         self.search_worker.finished.connect(self.on_search_complete)
         self.search_worker.error.connect(self.on_search_error)
@@ -925,6 +2414,11 @@ class SearchPage(ScrollArea):
     @pyqtSlot(object)
     def on_search_complete(self, result):
         """搜索完成"""
+        # 清理搜索worker引用
+        if hasattr(self, 'search_worker') and self.search_worker:
+            self.search_worker.deleteLater()
+            self.search_worker = None
+        
         # 无进度环，直接处理结果
         
         if result['type'] == 'appid':
@@ -942,15 +2436,102 @@ class SearchPage(ScrollArea):
                 )
                 return
             
-            # 创建结果卡片
-            for game in results:
+            # 存储搜索结果
+            self.search_results = results
+            
+            # 显示搜索结果
+            self.display_search_results(results)
+    
+    def display_search_results(self, results):
+        """显示搜索结果"""
+        # 清空现有卡片
+        for card in self.result_cards:
+            card.deleteLater()
+        self.result_cards.clear()
+        
+        # 根据排序选项对结果进行排序
+        sorted_results = self.sort_search_results(results)
+        
+        # 创建结果卡片
+        for game in sorted_results:
+            # 根据视图模式创建不同类型的卡片
+            if self.current_view_mode == "grid":
+                card = SearchResultCardGrid(game['appid'], game['name'], self)
+            else:
                 card = SearchResultCard(game['appid'], game['name'], self)
-                self.results_layout.addWidget(card)
-                self.result_cards.append(card)
+            
+            self.results_layout.addWidget(card)
+            self.result_cards.append(card)
+    
+
+    
+    def sort_search_results(self, results):
+        """根据排序选项对搜索结果进行排序"""
+        sort_mode = self.sort_combo.currentText()
+        
+        if sort_mode == tr("sort_az"):
+            return sorted(results, key=lambda x: x['name'])
+        elif sort_mode == tr("sort_za"):
+            return sorted(results, key=lambda x: x['name'], reverse=True)
+        else:  # 默认 - 保持原始顺序
+            return results
+    
+    def on_view_mode_changed(self):
+        """视图模式改变"""
+        view_mode = self.view_mode_combo.currentText()
+        
+        # 保存当前搜索结果
+        current_results = self.search_results.copy() if self.search_results else []
+        
+        # 移除现有容器
+        self.main_layout.removeWidget(self.results_container)
+        self.results_container.deleteLater()
+        
+        # 创建新的容器和布局
+        self.results_container = QWidget(self)
+        
+        if view_mode == tr("view_list"):
+            self.current_view_mode = "list"
+            self.list_results_layout = QVBoxLayout()  # 创建新布局
+            self.list_results_layout.setContentsMargins(0, 0, 0, 0)
+            self.list_results_layout.setSpacing(10)
+            self.results_layout = self.list_results_layout
+            self.results_container.setLayout(self.list_results_layout)
+        else:  # 卡片视图
+            self.current_view_mode = "grid"
+            self.grid_results_layout = FlowLayout()  # 创建新布局
+            self.grid_results_layout.setContentsMargins(0, 0, 0, 0)
+            self.grid_results_layout.setSpacing(15)
+            self.results_layout = self.grid_results_layout
+            self.results_container.setLayout(self.grid_results_layout)
+        
+        # 重新添加到布局（title=0, search_row=1, options=2, results=3）
+        self.main_layout.insertWidget(3, self.results_container)
+        
+        # 保存视图模式偏好
+        self.save_view_mode_preference()
+        
+        # 重新显示搜索结果
+        if current_results:
+            self.display_search_results(current_results)
+    
+    def on_sort_changed(self):
+        """排序方式改变"""
+        # 保存排序模式偏好
+        self.save_sort_mode_preference()
+        
+        # 重新显示搜索结果
+        if self.search_results:
+            self.display_search_results(self.search_results)
     
     @pyqtSlot(str)
     def on_search_error(self, error):
         """搜索失败"""
+        # 清理搜索worker引用
+        if hasattr(self, 'search_worker') and self.search_worker:
+            self.search_worker.deleteLater()
+            self.search_worker = None
+        
         InfoBar.error(
             title=tr("search_failed"),
             content=error,
@@ -976,8 +2557,19 @@ class SearchPage(ScrollArea):
         add_all_dlc = self.add_dlc_check.isChecked()
         patch_depot_key = self.patch_key_check.isChecked()
         
-        # 默认使用SteamAutoCracks V2
-        tool_type = "steamautocracks_v2"
+        # 获取用户选择的清单源
+        source_mapping = {
+            "SteamAutoCracks V2": "steamautocracks_v2",
+            "SWA V2 (printedwaste)": "printedwaste",
+            "Cysaw": "cysaw", 
+            "Furcate": "furcate",
+            "Walftech": "walftech",
+            "SteamDatabase": "steamdatabase",
+            "Sudama": "sudama",
+            "清单不求人": "buqiuren"
+        }
+        selected_source = self.manifest_source_combo.currentText()
+        tool_type = source_mapping.get(selected_source, "steamautocracks_v2")
         
         # 显示入库提示
         display_name = game_name or f"AppID {appid}"
@@ -997,8 +2589,8 @@ class SearchPage(ScrollArea):
                 
                 await backend.checkcn()
                 
-                # 处理清单 - 直接使用SteamAutoCracks V2
-                tool_type_actual = "steamautocracks_v2"
+                # 使用用户选择的清单源
+                tool_type_actual = tool_type
                 
                 # 判断是 ZIP 源还是 GitHub 源
                 zip_sources = ["printedwaste", "cysaw", "furcate", "walftech", "steamdatabase", "steamautocracks_v2", "sudama", "buqiuren"]
@@ -1015,6 +2607,11 @@ class SearchPage(ScrollArea):
                 
                 return success
         
+        # 确保之前的解锁worker已清理
+        if hasattr(self, 'unlock_worker') and self.unlock_worker and self.unlock_worker.isRunning():
+            self.unlock_worker.quit()
+            self.unlock_worker.wait()
+        
         self.unlock_worker = AsyncWorker(_unlock())
         self.unlock_worker.finished.connect(self.on_unlock_complete)
         self.unlock_worker.error.connect(self.on_unlock_error)
@@ -1023,6 +2620,11 @@ class SearchPage(ScrollArea):
     @pyqtSlot(object)
     def on_unlock_complete(self, success):
         """入库完成"""
+        # 清理解锁worker引用
+        if hasattr(self, 'unlock_worker') and self.unlock_worker:
+            self.unlock_worker.deleteLater()
+            self.unlock_worker = None
+        
         if success:
             InfoBar.success(
                 title=tr("add_success"),
@@ -1044,9 +2646,18 @@ class SearchPage(ScrollArea):
     @pyqtSlot(str)
     def on_unlock_error(self, error):
         """入库失败"""
+        # 清理解锁worker引用
+        if hasattr(self, 'unlock_worker') and self.unlock_worker:
+            self.unlock_worker.deleteLater()
+            self.unlock_worker = None
+        
         # 友好的错误提示
         if "Server disconnected" in error or "RemoteProtocolError" in error:
             error_msg = "网络连接失败，服务器断开连接\n\n可能的原因：\n1. 清单源服务器不稳定\n2. 网络连接问题\n\n建议：\n- 尝试切换其他清单源\n- 检查网络连接\n- 稍后重试"
+        elif "404" in error or "not found" in error.lower():
+            current_appid = getattr(self, 'current_appid', '当前游戏')
+            current_source = self.manifest_source_combo.currentText()
+            error_msg = f"未在 {current_source} 中找到 AppID {current_appid} 的清单\n\n建议：\n- 尝试切换其他清单源\n- 使用「自动搜索GitHub」选项\n- 确认游戏是否存在"
         elif "未找到" in error or "not found" in error.lower():
             current_appid = getattr(self, 'current_appid', '当前游戏')
             error_msg = f"未找到 AppID {current_appid} 的清单\n\n建议：\n- 尝试切换其他清单源\n- 使用「自动搜索GitHub」选项"
@@ -1117,6 +2728,7 @@ class SettingsPage(ScrollArea):
         self.debug_check = None
         self.logging_check = None
         self.unlocker_combo = None
+        self.timeout_spinbox = None
         self.theme_combo = None
         self.color_combo = None
         self.lang_combo = None
@@ -1158,6 +2770,14 @@ class SettingsPage(ScrollArea):
         self.unlocker_combo.setFixedWidth(180)
         app_config_card.addGroup(FluentIcon.SETTING, tr("unlocker_mode"), tr("force_unlocker_hint"), self.unlocker_combo)
         
+        # 入库超时时间
+        self.timeout_spinbox = SpinBox()
+        self.timeout_spinbox.setRange(10, 300)
+        self.timeout_spinbox.setValue(30)
+        self.timeout_spinbox.setSuffix(" s")
+        self.timeout_spinbox.setFixedWidth(120)
+        app_config_card.addGroup(FluentIcon.SPEED_HIGH, tr("download_timeout"), tr("download_timeout_hint"), self.timeout_spinbox)
+        
         layout.addWidget(app_config_card)
         
         # 外观设置卡片
@@ -1187,10 +2807,20 @@ class SettingsPage(ScrollArea):
         self.color_combo.setFixedWidth(200)
         appearance_card.addGroup(FluentIcon.BRUSH, tr("theme_color"), tr("theme_color_hint"), self.color_combo)
         
+        # 默认界面
+        self.default_page_combo = ComboBox()
+        self.default_page_combo.addItems([
+            tr("default_page_home"),
+            tr("default_page_search")
+        ])
+        self.default_page_combo.currentIndexChanged.connect(self.on_default_page_changed)
+        self.default_page_combo.setFixedWidth(150)
+        appearance_card.addGroup(FluentIcon.HOME, tr("default_page"), tr("default_page_hint"), self.default_page_combo)
+        
         # 语言
         self.lang_combo = ComboBox()
-        self.lang_combo.addItems(["简体中文", "English"])
-        self.lang_combo.setCurrentIndex(0)
+        self.lang_combo.addItems(["系统默认", "简体中文", "English", "Français", "Русский", "Deutsch", "日本語", "繁體中文"])
+        self.lang_combo.setCurrentIndex(0)  # 默认为系统默认
         self.lang_combo.currentIndexChanged.connect(self.on_language_changed)
         self.lang_combo.setFixedWidth(150)
         appearance_card.addGroup(FluentIcon.LANGUAGE, tr("language"), tr("language_hint"), self.lang_combo)
@@ -1254,6 +2884,10 @@ class SettingsPage(ScrollArea):
         # 下拉框
         if self.unlocker_combo:
             self.unlocker_combo.currentIndexChanged.connect(self._on_setting_changed)
+        
+        # 入库超时时间
+        if self.timeout_spinbox:
+            self.timeout_spinbox.valueChanged.connect(self._on_setting_changed)
         
         # 窗口特效
         if self.effect_combo:
@@ -1319,9 +2953,10 @@ class SettingsPage(ScrollArea):
     
     def on_language_changed(self, index):
         """语言切换"""
-        lang_map = {0: "zh_CN", 1: "en_US"}
-        selected_lang = lang_map.get(index, "zh_CN")
-        lang_name = "简体中文" if index == 0 else "English"
+        lang_map = {0: "system", 1: "zh_CN", 2: "en_US", 3: "fr_FR", 4: "ru_RU", 5: "de_DE", 6: "ja_JP", 7: "zh_TW"}
+        lang_name_map = {0: "系统默认", 1: "简体中文", 2: "English", 3: "Français", 4: "Русский", 5: "Deutsch", 6: "日本語", 7: "繁體中文"}
+        selected_lang = lang_map.get(index, "system")
+        lang_name = lang_name_map.get(index, "系统默认")
         
         # 显示重启提示
         dialog = MessageBox(
@@ -1341,12 +2976,17 @@ class SettingsPage(ScrollArea):
             os.execl(sys.executable, sys.executable, *sys.argv)
         else:
             # 用户取消，恢复原来的选择
-            # 读取当前保存的语言设置
             current_lang = self.load_language_setting()
-            if current_lang == "zh_CN":
-                self.lang_combo.setCurrentIndex(0)
-            else:
-                self.lang_combo.setCurrentIndex(1)
+            reverse_map = {"system": 0, "zh_CN": 1, "en_US": 2, "fr_FR": 3, "ru_RU": 4, "de_DE": 5, "ja_JP": 6, "zh_TW": 7}
+            self.lang_combo.setCurrentIndex(reverse_map.get(current_lang, 0))
+    
+    def on_default_page_changed(self, index):
+        """默认界面切换"""
+        page_map = {0: "home", 1: "search"}
+        page_type = page_map.get(index, "home")
+        
+        # 保存设置
+        self.save_theme_setting("default_page", page_type)
     
     def on_window_effect_changed(self, index):
         """窗口特效切换"""
@@ -1397,7 +3037,7 @@ class SettingsPage(ScrollArea):
         """显示关于对话框"""
         about_text = """Cai Install - Fluent Design 版本
 
-版本: 1.0.0
+版本: 1.3
 
 这是一个基于 PyQt6-Fluent-Widgets 的现代化 Steam 游戏解锁工具。
 
@@ -1479,16 +3119,39 @@ class SettingsPage(ScrollArea):
                 else:
                     self.unlocker_combo.setCurrentIndex(0)
             
+            # 加载入库超时时间
+            if self.timeout_spinbox:
+                self.timeout_spinbox.setValue(config.get("download_timeout", 30))
+            
             # 加载语言设置
             if self.lang_combo:
                 # 先断开信号连接，避免触发 on_language_changed
                 self.lang_combo.currentIndexChanged.disconnect(self.on_language_changed)
                 
-                lang = config.get("language", "zh_CN")
-                if lang == "zh_CN":
-                    self.lang_combo.setCurrentIndex(0)
-                else:
+                lang = config.get("language", "system")
+                if lang == "system":
+                    # 检测系统语言
+                    system_locale = QLocale.system()
+                    if system_locale.language() == QLocale.Language.Chinese:
+                        self.lang_combo.setCurrentIndex(0)  # 系统默认，实际为中文
+                    else:
+                        self.lang_combo.setCurrentIndex(0)  # 系统默认，实际为英文
+                elif lang == "zh_CN":
                     self.lang_combo.setCurrentIndex(1)
+                elif lang == "en_US":
+                    self.lang_combo.setCurrentIndex(2)
+                elif lang == "fr_FR":
+                    self.lang_combo.setCurrentIndex(3)
+                elif lang == "ru_RU":
+                    self.lang_combo.setCurrentIndex(4)
+                elif lang == "de_DE":
+                    self.lang_combo.setCurrentIndex(5)
+                elif lang == "ja_JP":
+                    self.lang_combo.setCurrentIndex(6)
+                elif lang == "zh_TW":
+                    self.lang_combo.setCurrentIndex(7)
+                else:
+                    self.lang_combo.setCurrentIndex(2)  # 默认英文
                 
                 # 重新连接信号
                 self.lang_combo.currentIndexChanged.connect(self.on_language_changed)
@@ -1517,14 +3180,24 @@ class SettingsPage(ScrollArea):
                 color_index = color_map.get(theme_color, 0)
                 self.color_combo.setCurrentIndex(color_index)
             
+            # 加载默认界面设置
+            if self.default_page_combo:
+                default_page = config.get("default_page", "home")
+                page_map = {
+                    "home": 0,
+                    "search": 1
+                }
+                page_index = page_map.get(default_page, 0)
+                self.default_page_combo.setCurrentIndex(page_index)
+            
             # 加载窗口特效设置
             if self.effect_combo:
-                window_effect = config.get("window_effect", "none")
+                window_effect = config.get("window_effect", "mica")
                 effect_map = {
                     "none": 0,
                     "mica": 1
                 }
-                effect_index = effect_map.get(window_effect, 0)
+                effect_index = effect_map.get(window_effect, 1)  # 默认为云母效果
                 self.effect_combo.setCurrentIndex(effect_index)
                 
                 # 应用窗口特效
@@ -1572,6 +3245,10 @@ class SettingsPage(ScrollArea):
                 unlocker_map = {0: "auto", 1: "steamtools", 2: "greenluma"}
                 config["force_unlocker_type"] = unlocker_map.get(self.unlocker_combo.currentIndex(), "auto")
             
+            # 保存入库超时时间
+            if self.timeout_spinbox:
+                config["download_timeout"] = self.timeout_spinbox.value()
+            
             # 保存主题模式
             if self.theme_combo:
                 theme_mode_map = {0: "light", 1: "dark", 2: "auto"}
@@ -1584,9 +3261,14 @@ class SettingsPage(ScrollArea):
                 if 0 <= color_index < len(colors):
                     config["theme_color"] = colors[color_index]
             
+            # 保存默认界面设置
+            if self.default_page_combo:
+                page_map = {0: "home", 1: "search"}
+                config["default_page"] = page_map.get(self.default_page_combo.currentIndex(), "home")
+            
             # 保存语言（已经在 on_language_changed 中保存了，这里也保存一次以防万一）
-            lang_map = {0: "zh_CN", 1: "en_US"}
-            config["language"] = lang_map.get(self.lang_combo.currentIndex(), "zh_CN")
+            lang_map = {0: "system", 1: "zh_CN", 2: "en_US", 3: "fr_FR", 4: "ru_RU", 5: "de_DE", 6: "ja_JP", 7: "zh_TW"}
+            config["language"] = lang_map.get(self.lang_combo.currentIndex(), "system")
             
             # 保存窗口特效
             if self.effect_combo:
@@ -1746,6 +3428,31 @@ class MainWindow(MSFluentWindow):
                 background: transparent;
             }
         """)
+        
+        # 根据配置切换到默认界面
+        self.switch_to_default_page()
+    
+    def switch_to_default_page(self):
+        """切换到默认界面"""
+        try:
+            config_path = Path.cwd() / 'config.json'
+            if config_path.exists():
+                import json
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    config = json.load(f)
+                default_page = config.get("default_page", "home")
+            else:
+                default_page = "home"
+            
+            # 切换到对应的界面
+            if default_page == "search":
+                self.switchTo(self.search_page)
+            else:
+                self.switchTo(self.home_page)
+                
+        except Exception:
+            # 出错时默认显示主页
+            self.switchTo(self.home_page)
     
     def on_restart_steam(self):
         """重启 Steam"""
@@ -1843,6 +3550,26 @@ def main():
     """主函数"""
     # 加载语言设置
     lang = load_language_config()
+    
+    # 如果是系统默认，检测系统语言
+    if lang == "system":
+        system_locale = QLocale.system()
+        if system_locale.language() == QLocale.Language.Chinese:
+            if system_locale.country() in (QLocale.Country.Taiwan, QLocale.Country.HongKong):
+                lang = "zh_TW"
+            else:
+                lang = "zh_CN"
+        elif system_locale.language() == QLocale.Language.French:
+            lang = "fr_FR"
+        elif system_locale.language() == QLocale.Language.Russian:
+            lang = "ru_RU"
+        elif system_locale.language() == QLocale.Language.German:
+            lang = "de_DE"
+        elif system_locale.language() == QLocale.Language.Japanese:
+            lang = "ja_JP"
+        else:
+            lang = "en_US"
+    
     set_language(lang)
     
     # 加载主题设置

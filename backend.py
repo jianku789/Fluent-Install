@@ -47,6 +47,11 @@ DEFAULT_CONFIG = {
     "background_brightness": 80, 
     "show_console_on_startup": False,
     "force_unlocker_type": "auto",
+    "language": "system",
+    "theme_mode": "auto",
+    "theme_color": "#0078d4",
+    "window_effect": "mica",
+    "default_page": "home",
     "Custom_Repos": {
         "github": [],
         "zip": []
@@ -659,8 +664,10 @@ class CaiBackend:
         return builtin_repos + custom_repos
 
     # NEW: HTTP helper function for safe requests with retry mechanism
-    async def http_get_safe(self, url: str, timeout: int = 30, max_retries: int = 3, retry_delay: float = 1.0) -> httpx.Response | None:
+    async def http_get_safe(self, url: str, timeout: int = None, max_retries: int = 3, retry_delay: float = 1.0) -> httpx.Response | None:
         """安全的HTTP GET请求，带错误处理和重试机制"""
+        if timeout is None:
+            timeout = self.config.get("download_timeout", 30)
         last_exception = None
         
         for attempt in range(max_retries):
@@ -1070,7 +1077,7 @@ class CaiBackend:
                 
                 # Step 3: 下载清单文件
                 self.log.info("正在下载清单文件...")
-                manifest_response = await self.client.get(download_url, timeout=180)
+                manifest_response = await self.client.get(download_url, timeout=max(180, self.config.get("download_timeout", 30) * 6))
                 
                 if manifest_response.status_code != 200:
                     self.log.error(f"下载失败，状态码: {manifest_response.status_code}")
@@ -1288,7 +1295,7 @@ class CaiBackend:
                 
                 # 下载清单文件
                 self.log.info("正在下载清单文件...")
-                manifest_response = await self.client.get(download_url, timeout=180)
+                manifest_response = await self.client.get(download_url, timeout=max(180, self.config.get("download_timeout", 30) * 6))
                 
                 if manifest_response.status_code != 200:
                     self.log.error(f"下载失败，状态码: {manifest_response.status_code}")
@@ -2128,8 +2135,24 @@ class CaiBackend:
         try:
             self.temp_path.mkdir(exist_ok=True, parents=True)
             self.log.info(f'正从 {source_name} 下载 AppID {app_id} 的清单...')
-            response = await self.client.get(download_url, timeout=60)
-            response.raise_for_status()
+            
+            try:
+                response = await self.client.get(download_url, timeout=60)
+                response.raise_for_status()
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code == 404:
+                    self.log.warning(f'AppID {app_id} 在 {source_name} 中未找到 (404错误)')
+                    return False
+                elif e.response.status_code == 429:
+                    self.log.error(f'请求 {source_name} 过于频繁 (429错误)，请稍后重试')
+                    return False
+                else:
+                    self.log.error(f'从 {source_name} 下载失败: HTTP {e.response.status_code}')
+                    return False
+            except Exception as e:
+                self.log.error(f'从 {source_name} 下载时出错: {self.stack_error(e)}')
+                return False
+                
             async with aiofiles.open(zip_path, 'wb') as f: await f.write(response.content)
             self.log.info('正在解压...')
             with zipfile.ZipFile(zip_path, 'r') as zip_ref: zip_ref.extractall(extract_path)
