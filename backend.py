@@ -56,6 +56,7 @@ DEFAULT_CONFIG = {
         "github": [],
         "zip": []
     },
+    "ST_Fixed_Version": False,  # SteamTools固定版本模式
     "QA1": "温馨提示: Github_Personal_Token(个人访问令牌)可在Github设置的最底下开发者选项中找到, 详情请看教程。",
     "QA2": "Force_Unlocker: 强制指定解锁工具, 填入 'steamtools' 或 'greenluma'。留空则自动检测。",
     "QA3": "Custom_Repos: 自定义清单库配置。github数组用于添加GitHub仓库，zip数组用于添加ZIP清单库。",
@@ -92,6 +93,20 @@ class STConverter:
         lua_content = decompressed_data[512:].decode('utf-8')
         metadata = {'original_xorkey': xorkey, 'size': size, 'xorkeyverify': xorkeyverify}
         return lua_content, metadata
+
+# 语言代码到 Steam API 语言参数的映射
+LANG_TO_STEAM = {
+    "zh_CN": "schinese",
+    "zh_TW": "tchinese",
+    "en_US": "english",
+    "fr_FR": "french",
+    "ru_RU": "russian",
+    "de_DE": "german",
+    "ja_JP": "japanese",
+}
+
+def get_steam_lang(lang_code: str) -> str:
+    return LANG_TO_STEAM.get(lang_code, "english")
 
 class CaiBackend:
     def __init__(self):
@@ -392,16 +407,18 @@ class CaiBackend:
             
     # --- NEW: File Manager Methods ---
 
-    async def _fetch_game_name_for_manager(self, appid: str) -> str:
+    async def _fetch_game_name_for_manager(self, appid: str, lang: str = "schinese") -> str:
         """为文件管理器异步获取游戏名称，并使用缓存。现在使用Steam官方API。"""
         if not appid or not appid.isdigit():
             return "无效AppID"
-        if appid in self.name_cache:
-            return self.name_cache[appid]
+        
+        cache_key = f"{appid}_{lang}"
+        if cache_key in self.name_cache:
+            return self.name_cache[cache_key]
 
         # 使用Steam官方API获取游戏详情
         api_urls = [
-            f"https://store.steampowered.com/api/appdetails?appids={appid}&l=schinese",
+            f"https://store.steampowered.com/api/appdetails?appids={appid}&l={lang}",
             f"https://store.steampowered.com/api/appdetails?appids={appid}&l=english",
             f"https://store.steampowered.com/api/appdetails?appids={appid}"
         ]
@@ -418,15 +435,68 @@ class CaiBackend:
                 if app_data.get("success") and "data" in app_data:
                     game_name = app_data["data"].get("name", "")
                     if game_name:
-                        self.name_cache[appid] = game_name
+                        self.name_cache[cache_key] = game_name
                         return game_name
                         
             return f"AppID {appid}"
         except Exception as e:
             self.log.warning(f"从Steam官方API获取 AppID {appid} 的名称失败: {e}")
             return f"AppID {appid}"
-            
-    async def get_managed_files(self) -> Dict:
+
+    # --- 联机游戏启动配置管理 ---
+
+    async def get_launcher_profiles(self) -> List[Dict]:
+        """获取所有联机启动配置"""
+        profile_path = self.project_root / 'launcher_profiles.json'
+        if not profile_path.exists():
+            return []
+        try:
+            async with aiofiles.open(profile_path, mode='r', encoding='utf-8') as f:
+                content = await f.read()
+                return json.loads(content)
+        except Exception as e:
+            self.log.error(f"读取启动配置文件失败: {e}")
+            return []
+
+    async def save_launcher_profile(self, profile_data: Dict) -> Dict:
+        """保存或更新单个启动配置"""
+        profile_path = self.project_root / 'launcher_profiles.json'
+        profiles = await self.get_launcher_profiles()
+
+        is_update = False
+        for i, p in enumerate(profiles):
+            if p.get('id') == profile_data.get('id'):
+                profiles[i] = profile_data
+                is_update = True
+                break
+
+        if not is_update:
+            profiles.append(profile_data)
+
+        try:
+            async with aiofiles.open(profile_path, mode='w', encoding='utf-8') as f:
+                await f.write(json.dumps(profiles, indent=2, ensure_ascii=False))
+            return {"success": True, "message": "配置已保存", "profiles": profiles}
+        except Exception as e:
+            self.log.error(f"保存启动配置文件失败: {e}")
+            return {"success": False, "message": str(e)}
+
+    async def delete_launcher_profile(self, profile_id: str) -> Dict:
+        """删除启动配置"""
+        profile_path = self.project_root / 'launcher_profiles.json'
+        profiles = await self.get_launcher_profiles()
+        new_profiles = [p for p in profiles if p.get('id') != profile_id]
+
+        try:
+            async with aiofiles.open(profile_path, mode='w', encoding='utf-8') as f:
+                await f.write(json.dumps(new_profiles, indent=2, ensure_ascii=False))
+            return {"success": True, "message": "配置已删除", "profiles": new_profiles}
+        except Exception as e:
+            return {"success": False, "message": str(e)}
+
+    # --- END 联机游戏启动配置管理 ---
+
+    async def get_managed_files(self, lang: str = "schinese") -> Dict:
         """扫描所有相关目录，返回文件信息，并批量获取游戏名称。"""
         if not self.steam_path or not self.steam_path.exists():
             return {"error": "Steam路径未配置或无效。"}
@@ -449,19 +519,19 @@ class CaiBackend:
             all_appids_to_fetch.update(gl_appids)
 
         # 2. 批量获取游戏名称
-        # 过滤掉已在缓存中的AppID
-        appids_to_fetch = [appid for appid in all_appids_to_fetch if appid not in self.name_cache]
+        appids_to_fetch = [appid for appid in all_appids_to_fetch if f"{appid}_{lang}" not in self.name_cache]
         if appids_to_fetch:
-            tasks = [self._fetch_game_name_for_manager(appid) for appid in appids_to_fetch]
+            tasks = [self._fetch_game_name_for_manager(appid, lang) for appid in appids_to_fetch]
             results = await asyncio.gather(*tasks)
             for appid, name in zip(appids_to_fetch, results):
-                self.name_cache[appid] = name
+                self.name_cache[f"{appid}_{lang}"] = name
 
         # 3. 将获取到的名称填充回数据
         for category in file_data:
             for item in file_data[category]:
-                if item['appid'] in self.name_cache:
-                    item['game_name'] = self.name_cache[item['appid']]
+                cache_key = f"{item['appid']}_{lang}"
+                if cache_key in self.name_cache:
+                    item['game_name'] = self.name_cache[cache_key]
         
         return file_data
 
@@ -472,23 +542,41 @@ class CaiBackend:
         try:
             for filename in os.listdir(directory):
                 if filename.endswith(".lua") and filename != "steamtools.lua":
-                    content = (directory / filename).read_text(encoding='utf-8', errors='ignore')
+                    file_path = directory / filename
+                    content = file_path.read_text(encoding='utf-8', errors='ignore')
                     match = re.search(r'addappid\s*\(\s*(\d+)', content)
                     appid = match.group(1) if match else "N/A"
+                    
+                    # 检查是否是固定版本模式
+                    is_fixed = bool(re.search(r'^\s*setManifestid\(', content, re.MULTILINE))
+                    mode = "fixed" if is_fixed else "auto"
+                    
                     if appid.isdigit():
                         appids.add(appid)
-                        file_data_map[appid] = {"filename": filename, "appid": appid, "game_name": "加载中...", "status": "ok"}
+                        file_data_map[appid] = {
+                            "filename": filename, 
+                            "appid": appid, 
+                            "game_name": "", 
+                            "status": "ok",
+                            "mode": mode
+                        }
             
             st_lua_path = directory / "steamtools.lua"
             if st_lua_path.exists():
-                data.append({"filename": "steamtools.lua", "appid": "N/A", "game_name": "SteamTools核心文件", "status": "core_file"})
+                data.append({"filename": "steamtools.lua", "appid": "N/A", "game_name": "SteamTools核心文件", "status": "core_file", "mode": "auto"})
                 content = st_lua_path.read_text(encoding='utf-8', errors='ignore')
                 # --- CRITICAL FIX: Use a more general regex to find all appids ---
                 unlocked_appids = set(re.findall(r'addappid\s*\(\s*(\d+)', content))
                 for appid in unlocked_appids:
                     if appid not in file_data_map:
                         appids.add(appid)
-                        file_data_map[appid] = {"filename": f"缺少 {appid}.lua", "appid": appid, "game_name": "加载中...", "status": "unlocked_only"}
+                        file_data_map[appid] = {
+                            "filename": f"缺少 {appid}.lua", 
+                            "appid": appid, 
+                            "game_name": "", 
+                            "status": "unlocked_only",
+                            "mode": "auto"
+                        }
         except Exception as e:
             self.log.error(f"扫描SteamTools目录失败: {e}")
         
@@ -523,7 +611,7 @@ class CaiBackend:
 
                 if appid.isdigit():
                     appids.add(appid)
-                    data.append({"filename": filename, "appid": appid, "game_name": "加载中...", "status": "ok"})
+                    data.append({"filename": filename, "appid": appid, "game_name": "", "status": "ok"})
         except Exception as e:
             self.log.error(f"扫描目录 {directory} 失败: {e}")
 
@@ -593,6 +681,78 @@ class CaiBackend:
         
         return {"success": not failed, "message": message}
 
+    async def toggle_st_version(self, filename: str) -> Dict:
+        """切换ST文件版本模式（自动更新/固定版本）"""
+        if not self.steam_path:
+            return {"success": False, "message": "Steam路径未设置"}
+        
+        file_path = self.steam_path / 'config' / 'stplug-in' / filename
+        if not file_path.exists():
+            return {"success": False, "message": "文件不存在"}
+
+        try:
+            async with aiofiles.open(file_path, 'r', encoding='utf-8') as f:
+                content = await f.read()
+
+            # 检查当前是否是固定版本模式
+            is_currently_fixed = bool(re.search(r'^\s*setManifestid\(', content, re.MULTILINE))
+            
+            if is_currently_fixed:
+                # 切换到自动更新模式（注释掉setManifestid）
+                new_content = re.sub(r'(^\s*)setManifestid\(', r'\1--setManifestid(', content, flags=re.MULTILINE)
+                action_msg = "已切换为自动更新"
+            else:
+                # 切换到固定版本模式
+                if re.search(r'^\s*--\s*setManifestid\(', content, re.MULTILINE):
+                    # 恢复被注释的setManifestid
+                    new_content = re.sub(r'(^\s*)--\s*setManifestid\(', r'\1setManifestid(', content, flags=re.MULTILINE)
+                    action_msg = "已恢复为固定版本 (取消注释)"
+                else:
+                    # 查找depot ID并添加对应的manifest ID
+                    depot_ids = re.findall(r'addappid\(\s*(\d+)\s*,', content)
+                    if not depot_ids:
+                        return {"success": False, "message": "未在文件中找到有效的 Depot ID"}
+
+                    manifest_lines = []
+                    found_count = 0
+                    search_paths = [
+                        self.steam_path / 'config' / 'depotcache',
+                        self.steam_path / 'depotcache'
+                    ]
+
+                    for depot_id in depot_ids:
+                        found_manifest_id = None
+                        for search_dir in search_paths:
+                            if not search_dir.exists():
+                                continue
+                            candidates = list(search_dir.glob(f"{depot_id}_*.manifest"))
+                            if candidates:
+                                # 提取manifest ID
+                                match = re.match(rf"{depot_id}_(\d+)\.manifest", candidates[0].name)
+                                if match:
+                                    found_manifest_id = match.group(1)
+                                    break
+                        
+                        if found_manifest_id:
+                            manifest_lines.append(f'setManifestid({depot_id}, "{found_manifest_id}")')
+                            found_count += 1
+
+                    if found_count == 0:
+                        return {"success": False, "message": "未在本地找到对应 Manifest 文件，无法固定版本"}
+
+                    # 在文件末尾添加固定版本的manifest配置
+                    new_content = content.rstrip() + "\n\n-- Fixed Manifests (Generated)\n" + "\n".join(manifest_lines) + "\n"
+                    action_msg = f"已切换为固定版本 (匹配到 {found_count} 个文件)"
+
+            async with aiofiles.open(file_path, 'w', encoding='utf-8') as f:
+                await f.write(new_content)
+            
+            self.log.info(f"ST文件 {filename} 版本切换成功: {action_msg}")
+            return {"success": True, "message": action_msg}
+
+        except Exception as e:
+            self.log.error(f"切换ST文件版本失败: {e}")
+            return {"success": False, "message": str(e)}
 
     def _modify_st_lua_for_delete(self, appid: str):
         """从steamtools.lua中移除一个解锁条目。"""
@@ -1393,40 +1553,58 @@ class CaiBackend:
 
         # 2. 下载新数据
         url = "https://api.993499094.xyz/depotkeys.json"
-        try:
-            self.log.info(f"正在从 Sudama API ({url}) 下载全量密钥库...")
-            # 数据量可能较大，使用较大的超时
-            response = await self.client.get(url, timeout=120)
-            response.raise_for_status()
-            
-            data = response.json()
-            
-            if not isinstance(data, dict):
-                self.log.error("API 返回的数据格式不正确 (应为 JSON 对象)")
+        
+        # 实现重试机制
+        max_retries = 3
+        retry_delay = 5
+        
+        for attempt in range(max_retries):
+            try:
+                self.log.info(f"正在从 Sudama API ({url}) 下载全量密钥库... (尝试 {attempt + 1}/{max_retries})")
+                # 减少超时时间，避免长时间等待
+                response = await self.client.get(url, timeout=60)
+                response.raise_for_status()
+                
+                data = response.json()
+                
+                if not isinstance(data, dict):
+                    self.log.error("API 返回的数据格式不正确 (应为 JSON 对象)")
+                    return {}
+
+                # 3. 写入缓存
+                cache_data = {
+                    "timestamp": current_time,
+                    "data": data
+                }
+                async with aiofiles.open(cache_file, 'w', encoding='utf-8') as f:
+                    await f.write(json.dumps(cache_data, ensure_ascii=False))
+                
+                self.log.info(f"密钥库下载完成并缓存，共 {len(data)} 条数据。")
+                return data
+                
+            except Exception as e:
+                self.log.warning(f"第 {attempt + 1} 次下载 Sudama 数据失败: {str(e)[:200]}...")
+                
+                if attempt < max_retries - 1:
+                    self.log.info(f"等待 {retry_delay} 秒后重试...")
+                    await asyncio.sleep(retry_delay)
+                    retry_delay *= 2  # 指数退避
+                else:
+                    self.log.error(f"下载 Sudama 数据失败，所有重试都失败了")
+                    
+                # 下载失败时的兜底：如果有过期的缓存，尽量使用过期的
+                if cache_file.exists():
+                    try:
+                        self.log.warning("网络获取失败，尝试使用旧的本地缓存...")
+                        async with aiofiles.open(cache_file, 'r', encoding='utf-8') as f:
+                            cached_data = json.loads(await f.read())
+                            if cached_data.get('data'):
+                                self.log.info(f"使用旧的本地缓存成功，数据更新时间: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(cached_data.get('timestamp', 0)))}")
+                                return cached_data.get('data', {})
+                    except Exception as cache_error:
+                        self.log.warning(f"使用旧的本地缓存也失败了: {cache_error}")
+                        
                 return {}
-
-            # 3. 写入缓存
-            cache_data = {
-                "timestamp": current_time,
-                "data": data
-            }
-            async with aiofiles.open(cache_file, 'w', encoding='utf-8') as f:
-                await f.write(json.dumps(cache_data, ensure_ascii=False))
-            
-            self.log.info(f"密钥库下载完成并缓存，共 {len(data)} 条数据。")
-            return data
-
-        except Exception as e:
-            self.log.error(f"下载 Sudama 数据失败: {self.stack_error(e)}")
-            # 下载失败时的兜底：如果有过期的缓存，尽量使用过期的
-            if cache_file.exists():
-                try:
-                    self.log.warning("网络获取失败，尝试使用旧的本地缓存...")
-                    async with aiofiles.open(cache_file, 'r', encoding='utf-8') as f:
-                        return json.loads(await f.read()).get('data', {})
-                except:
-                    pass
-            return {}
 
 
 # --- SUDAMA REPO START ---
@@ -1442,16 +1620,16 @@ class CaiBackend:
             # 1. 获取 Depot 和 Manifest 信息 (使用现有的 SteamUI/DDXNB 接口)
             depot_manifest_map = await self._get_depots_and_manifests_from_steamui(app_id)
             if not depot_manifest_map:
-                self.log.error(f"未能从 API 获取到 AppID {app_id} 的 depot 信息")
-                return False
+                self.log.warning(f"未能从 API 获取到 AppID {app_id} 的 depot 信息，跳过该AppID的处理")
+                return True  # 返回True表示跳过了处理，而不是失败
             
             self.log.info(f"获取到 {len(depot_manifest_map)} 个 depot 及其 manifest")
 
             # 2. 获取 Sudama 的所有密钥数据 (改为调用缓存函数)
             sudama_keys = await self._get_cached_sudama_data()
             if not sudama_keys:
-                self.log.error("无法获取 Sudama 密钥库数据")
-                return False
+                self.log.warning("无法获取 Sudama 密钥库数据，跳过该AppID的处理")
+                return True  # 返回True表示跳过了处理，而不是失败
 
             # 3. 匹配 Depot 与 Key
             valid_depots = {}
@@ -1490,8 +1668,8 @@ class CaiBackend:
             # 使用steamui API获取depot和manifest信息（复用现有逻辑）
             depot_manifest_map = await self._get_depots_and_manifests_from_steamui(app_id)
             if not depot_manifest_map:
-                self.log.error(f"未能从 steamui API 获取到 AppID {app_id} 的 depot 信息，请检查APP ID是否正确或API请求问题")
-                return False
+                self.log.warning(f"未能从 steamui API 获取到 AppID {app_id} 的 depot 信息，跳过该AppID的处理")
+                return True  # 返回True表示跳过了处理，而不是失败
             
             self.log.info(f"从 steamui API 获取到 {len(depot_manifest_map)} 个 depot 及其 manifest")
             
@@ -1527,14 +1705,17 @@ class CaiBackend:
             return False
 
     # NEW: DepotKey patching methods
-    async def download_depotkeys_json(self) -> Dict | None:
+    async def download_depotkeys_json(self) -> Dict:
         """
         获取 DepotKeys 数据。
         已修改：不再从 GitHub/ManifestHub 下载，而是直接复用 Sudama API 的缓存逻辑。
         这样 '修补创意工坊密钥' 功能也会使用 Sudama 的数据源。
         """
         self.log.info("正在获取 DepotKeys (来源: Sudama API)...")
-        return await self._get_cached_sudama_data()
+        data = await self._get_cached_sudama_data()
+        if not data:
+            self.log.warning("无法获取 Sudama 密钥库数据，将使用空数据继续处理")
+        return data or {}
 
     async def process_steamautocracks_v2_manifest(self, app_id: str, unlocker_type: str, use_st_auto_update: bool, add_all_dlc: bool = False, patch_depot_key: bool = False) -> bool:
         """处理 SteamAutoCracks/ManifestHub(2) 清单库 - 使用 steamui API 获取 depot 和 manifest 信息"""
@@ -1544,8 +1725,8 @@ class CaiBackend:
             # 1. 从 steamui API 获取 depot 和 manifest 信息
             depot_manifest_map = await self._get_depots_and_manifests_from_steamui(app_id)
             if not depot_manifest_map:
-                self.log.error(f"未能从 steamui API 获取到 AppID {app_id} 的 depot 信息，请检查APP ID是否正确或API请求问题")
-                return False
+                self.log.warning(f"未能从 steamui API 获取到 AppID {app_id} 的 depot 信息，跳过该AppID的处理")
+                return True  # 返回True表示跳过了处理，而不是失败
             
             self.log.info(f"从 steamui API 获取到 {len(depot_manifest_map)} 个 depot 及其 manifest")
             
@@ -1556,8 +1737,9 @@ class CaiBackend:
             
             depotkeys_data = await self.download_depotkeys_json()
             if not depotkeys_data:
-                self.log.error("无法获取 depotkeys 数据")
-                return False
+                self.log.warning("无法获取 depotkeys 数据，将跳过密钥修补功能")
+                # 继续处理，只是不修补密钥
+                patch_depot_key = False
             
             # 3. 匹配 depot 与 depotkey
             valid_depots = {}
@@ -1598,12 +1780,12 @@ class CaiBackend:
             
             # Check for success status in the API response
             if data.get("status") != "success" or not data.get("data"):
-                self.log.error(f"备用API返回错误或无数据 for AppID {app_id}，请检查APP ID是否正确或API请求问题")
+                self.log.warning(f"备用API返回错误或无数据 for AppID {app_id}，跳过该AppID的处理")
                 return {}
 
             app_data = data["data"].get(app_id)
             if not app_data or "depots" not in app_data:
-                self.log.error(f"备用API响应中未找到 AppID {app_id} 的 depots 信息，请检查APP ID是否正确或API请求问题")
+                self.log.warning(f"备用API响应中未找到 AppID {app_id} 的 depots 信息，跳过该AppID的处理")
                 return {}
             
             depots = app_data["depots"]
@@ -1625,12 +1807,12 @@ class CaiBackend:
             if depot_manifest_map:
                 self.log.info(f"从备用API总共找到 {len(depot_manifest_map)} 个有效的 depot 及其 manifest")
             else:
-                self.log.warning(f"备用API未找到 AppID {app_id} 的任何有效 depot-manifest 映射，请检查APP ID是否正确或API请求问题")
+                self.log.warning(f"备用API未找到 AppID {app_id} 的任何有效 depot-manifest 映射，跳过该AppID的处理")
 
             return depot_manifest_map
 
         except Exception as e:
-            self.log.error(f"从备用API (steam.ddxnb.cn) 获取 depot 信息失败: {e}")
+            self.log.warning(f"从备用API (steam.ddxnb.cn) 获取 AppID {app_id} 的 depot 信息失败: {e}，跳过该AppID的处理")
             return {}
 
     async def _get_depots_and_manifests_from_steamui(self, app_id: str) -> Dict[str, str]:
@@ -1693,12 +1875,17 @@ class CaiBackend:
                 self.log.info(f"从主API (steamui.com) 成功获取 {len(depot_manifest_map)} 个 depot。")
                 return depot_manifest_map
             else:
-                # This case means the request was successful but no depots were found.
-                # We should raise an exception to trigger the fallback.
-                raise ValueError("主API响应成功，但未解析到任何depot信息，请检查APP ID是否正确或API请求问题")
+                # 没有找到depot信息，返回空字典让调用者处理
+                self.log.warning(f"主API响应成功，但未解析到 AppID {app_id} 的任何depot信息，跳过该AppID的处理")
+                return {}
 
         except Exception as e:
-            self.log.warning(f"主API (steamui.com) 访问或解析失败: {e}。")
+            # 针对403错误给出更清晰的提示
+            if "403" in str(e):
+                self.log.warning(f"主API (steamui.com) 返回403错误，AppID {app_id} 可能被限制访问")
+            else:
+                self.log.warning(f"主API (steamui.com) 访问或解析失败: {e}")
+            
             if vdf_content:
                 self.log.warning(f"主API返回内容预览: {vdf_content[:300]}...")
             self.log.info("正在尝试备用API (steam.ddxnb.cn)...")
@@ -1792,6 +1979,11 @@ class CaiBackend:
     async def _patch_lua_with_existing_depotkeys(self, app_id: str, lua_file_path: Path, depotkeys_data: Dict) -> bool:
         """使用已有的 depotkeys 数据修补 LUA 文件（避免重复下载）"""
         try:
+            # 如果depotkeys_data为空，直接返回
+            if not depotkeys_data:
+                self.log.warning("depotkeys_data 为空，跳过密钥修补")
+                return False
+                
             # 检查 app_id 是否在 depotkeys 中
             if app_id not in depotkeys_data:
                 self.log.warning(f"没有此AppID的depotkey: {app_id}，这是正常情况，可能此APP ID没有创意功放密钥或者暂未收录，不影响本体使用")
@@ -2410,64 +2602,67 @@ class CaiBackend:
         if match: return match.group(1)
         return user_input if user_input.isdigit() else None
 
-    async def find_appid_by_name(self, game_name: str) -> List[Dict]:
+    async def find_appid_by_name(self, game_name: str, lang: str = "schinese") -> List[Dict]:
         try:
             self.log.info(f"正在尝试搜索游戏: {game_name}")
-            
-            # 使用Steam商店搜索页面进行爬虫
-            import urllib.parse
+
+            # 主用 CaiGames API
+            r = await self.client.get(
+                "https://api.9178666.xyz/search",
+                params={'term': game_name},
+                headers={
+                    "X-Client-Auth": "CaiGames-pvzcxw",
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                    "Accept": "application/json"
+                },
+                timeout=20
+            )
+            if r.status_code != 403:
+                r.raise_for_status()
+                resp_json = r.json()
+                raw_data = resp_json.get("data", []) if isinstance(resp_json, dict) and (resp_json.get("status") == "ok" or "data" in resp_json) else []
+                results = [{'appid': str(i.get('appid')), 'name': i.get('name'), 'header_image': i.get('image')} for i in raw_data if i.get('appid') and i.get('name')]
+                if results:
+                    self.log.info(f"CaiGames API 成功找到 {len(results)} 个匹配结果")
+                    return results
+            else:
+                self.log.warning("CaiGames API 返回 403，切换到 Steam 搜索")
+        except Exception as e:
+            self.log.warning(f"CaiGames API 搜索失败，切换到 Steam 搜索: {e}")
+
+        # 备用：Steam 商店搜索
+        try:
+            import urllib.parse, re
             encoded_game_name = urllib.parse.quote(game_name)
-            search_url = f"https://store.steampowered.com/search/?term={encoded_game_name}&supportedlang=schinese&ndl=1"
-            
+            search_url = f"https://store.steampowered.com/search/?term={encoded_game_name}&supportedlang={lang}&ndl=1"
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                 'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-                'Connection': 'keep-alive',
-                'Upgrade-Insecure-Requests': '1'
             }
-            
-            # 发送请求获取搜索结果页面
             r = await self.client.get(search_url, headers=headers, timeout=30)
-            
             if r.status_code != 200:
-                self.log.warning(f"请求失败，状态码: {r.status_code}")
+                self.log.warning(f"Steam 搜索请求失败，状态码: {r.status_code}")
                 return []
-            
-            html_content = r.text
-            
-            # 使用正则表达式提取游戏信息
-            import re
-            # 匹配游戏卡片的正则表达式
             game_pattern = re.compile(r'<a href="https://store\.steampowered\.com/app/(\d+)/[^"]*"[^>]*>(.*?)</a>', re.DOTALL)
-            matches = game_pattern.findall(html_content)
-            
             games_list = []
-            for match in matches:
-                appid = match[0]
-                # 从匹配的内容中提取游戏名称
-                name_match = re.search(r'<span class="title">(.*?)</span>', match[1])
+            for appid, content in game_pattern.findall(r.text):
+                name_match = re.search(r'<span class="title">(.*?)</span>', content)
                 if name_match:
-                    name = name_match.group(1).strip()
                     games_list.append({
                         'appid': appid,
-                        'name': name,
+                        'name': name_match.group(1).strip(),
                         'header_image': f"https://cdn.cloudflare.steamstatic.com/steam/apps/{appid}/header.jpg"
                     })
-                    
-                    # 限制返回结果数量
                     if len(games_list) >= 20:
                         break
-            
             if games_list:
-                self.log.info(f"成功找到 {len(games_list)} 个匹配结果")
+                self.log.info(f"Steam 搜索成功找到 {len(games_list)} 个匹配结果")
                 return games_list
-            else:
-                self.log.warning("未找到相关游戏。")
-                
+            self.log.warning("未找到相关游戏。")
         except Exception as e:
             self.log.error(f"搜索游戏 '{game_name}' 失败: {self.stack_error(e)}")
-            
+
         return []
 
     async def cleanup_temp_files(self):

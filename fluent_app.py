@@ -19,12 +19,11 @@ from qfluentwidgets import (
     InfoBarPosition, CardWidget, ScrollArea, CaptionLabel,
     TransparentToolButton, IconWidget, FlowLayout, SearchLineEdit,
     PrimaryPushButton, CheckBox, GroupHeaderCardWidget, InfoBarIcon,
-    SpinBox, HyperlinkButton
+    SpinBox, HyperlinkButton, MessageBoxBase, TitleLabel
 )
 
 # 导入后端
-from backend import CaiBackend
-
+from backend import CaiBackend, get_steam_lang
 
 
 # 语言配置
@@ -231,6 +230,22 @@ TEXTS = {
         "thanks_title": "鸣谢",
         "about_text": "Cai Install - Fluent Design 版本\n\n版本: 1.3\n\n这是一个基于 PyQt6-Fluent-Widgets 的现代化 Steam 游戏解锁工具。\n\n功能特性:\n• Fluent Design 设计风格\n• 支持多种清单源\n• 游戏搜索和入库\n• 已入库游戏管理\n• 主题自定义\n\n项目地址: https://github.com/zhouchentao666/Cai-install-Fluent-GUI",
         "thanks_text": "特别鸣谢\n\n开发者:\n• zhouchentao666 - 制作人员\n\n开源项目:\n• PyQt6 - Qt6 Python 绑定\n• PyQt-Fluent-Widgets - Fluent Design 组件库\n• Cai-install-Web-GUI - 原始项目作者\n• httpx - 异步 HTTP 客户端\n\n清单源提供:\n• SWA V2\n• Cysaw\n• Furcate\n• Walftech\n• steamdatabase\n• SteamAutoCracks\n• Sudama\n• 清单不求人\n\n社区与联系:\n• GitHub: https://github.com/zhouchentao666/Fluent-Install\n• 加入 Q 群: https://qm.qq.com/q/gtTLap5Jw4\n• TG 群组: https://t.me/+vTrqXKpRJE9kNmVl\n• TG 频道: https://t.me/FluentInstall\n• Discord: https://discord.gg/2qh68QRMuA\n\n感谢所有为本项目做出贡献的开发者和用户！",
+        "donate": "捐赠",
+        "donate_title": "支持开发者",
+        "donate_desc": "如果本项目对你有帮助，欢迎请作者喝杯咖啡 ☕",
+        "donate_wechat": "微信支付",
+        "donate_alipay": "支付宝",
+        "donate_loading": "加载中...",
+        "donate_load_failed": "图片加载失败",
+        "fixed_version": "固定版本",
+        "auto_update": "自动更新",
+        "toggle_version_mode": "切换版本模式",
+        "st_settings": "SteamTools 设置",
+        "st_settings_hint": "控制SteamTools文件的版本管理模式",
+        "st_fixed_enable": "启用 SteamTools 固定版本模式",
+        "st_fixed_tooltip": "新添加的SteamTools文件默认使用固定版本模式",
+        "name_not_found": "名称未找到",
+        "fetch_failed": "获取失败",
     },
     "en_US": {
         "app_title": "FluentInstall",
@@ -355,6 +370,22 @@ TEXTS = {
         "thanks_title": "Credits",
         "about_text": "Cai Install - Fluent Design Version\n\nVersion: 1.3\n\nThis is a modern Steam game unlocking tool based on PyQt6-Fluent-Widgets.\n\nFeatures:\n• Fluent Design style\n• Support for multiple manifest sources\n• Game search and adding\n• Installed games management\n• Theme customization\n\nProject URL: https://github.com/zhouchentao666/Cai-install-Fluent-GUI",
         "thanks_text": "Special Thanks\n\nDevelopers:\n• zhouchentao666 - Developer\n\nOpen Source Projects:\n• PyQt6 - Qt6 Python Bindings\n• PyQt-Fluent-Widgets - Fluent Design Component Library\n• Cai-install-Web-GUI - Original Project Author\n• httpx - Async HTTP Client\n\nManifest Sources:\n• SWA V2\n• Cysaw\n• Furcate\n• Walftech\n• steamdatabase\n• SteamAutoCracks\n• Sudama\n• Manifest Helper Library\n\nThanks to all developers and users who contributed to this project!",
+        "donate": "Donate",
+        "donate_title": "Support the Developer",
+        "donate_desc": "If this project has been helpful, feel free to buy the author a coffee ☕",
+        "donate_wechat": "WeChat Pay",
+        "donate_alipay": "Alipay",
+        "donate_loading": "Loading...",
+        "donate_load_failed": "Failed to load image",
+        "fixed_version": "Fixed Version",
+        "auto_update": "Auto Update",
+        "toggle_version_mode": "Toggle Version Mode",
+        "st_settings": "SteamTools Settings",
+        "st_settings_hint": "Control SteamTools file version management mode",
+        "st_fixed_enable": "Enable SteamTools Fixed Version Mode",
+        "st_fixed_tooltip": "New SteamTools files will use fixed version mode by default",
+        "name_not_found": "Name Not Found",
+        "fetch_failed": "Fetch Failed",
     },
     "fr_FR": {
         "app_title": "FluentInstall",
@@ -486,6 +517,22 @@ TEXTS = {
         "thanks_title": "Crédits",
         "about_text": "Cai Install - Version Fluent Design\n\nVersion: 1.3\n\nCeci est un outil de déverrouillage de jeu Steam moderne basé sur PyQt6-Fluent-Widgets.\n\nFonctionnalités:\n• Style Fluent Design\n• Support de plusieurs sources de manifestes\n• Recherche et ajout de jeux\n• Gestion des jeux installés\n• Personnalisation du thème\n\nURL du projet: https://github.com/zhouchentao666/Cai-install-Fluent-GUI",
         "thanks_text": "Remerciements spéciaux\n\nDéveloppeurs:\n• zhouchentao666 - Développeur\n\nProjets open source:\n• PyQt6 - Bindings Python Qt6\n• PyQt-Fluent-Widgets - Bibliothèque de composants Fluent Design\n• Cai-install-Web-GUI - Auteur du projet original\n• httpx - Client HTTP asynchrone\n\nSources de manifestes:\n• SWA V2\n• Cysaw\n• Furcate\n• Walftech\n• steamdatabase\n• SteamAutoCracks\n• Sudama\n• Bibliothèque d'aide de manifeste\n\nMerci à tous les développeurs et utilisateurs qui ont contribué à ce projet!",
+        "donate": "Faire un don",
+        "donate_title": "Soutenir le développeur",
+        "donate_desc": "Si ce projet vous a été utile, n'hésitez pas à offrir un café à l'auteur ☕",
+        "donate_wechat": "WeChat Pay",
+        "donate_alipay": "Alipay",
+        "donate_loading": "Chargement...",
+        "donate_load_failed": "Échec du chargement de l'image",
+        "fixed_version": "Version fixe",
+        "auto_update": "Mise à jour auto",
+        "toggle_version_mode": "Changer le mode de version",
+        "st_settings": "Paramètres SteamTools",
+        "st_settings_hint": "Contrôler le mode de gestion des versions des fichiers SteamTools",
+        "st_fixed_enable": "Activer le mode version fixe SteamTools",
+        "st_fixed_tooltip": "Les nouveaux fichiers SteamTools utiliseront le mode version fixe par défaut",
+        "name_not_found": "Nom introuvable",
+        "fetch_failed": "Échec de récupération",
     },
     "ru_RU": {
         "app_title": "FluentInstall",
@@ -617,6 +664,22 @@ TEXTS = {
         "thanks_title": "Благодарности",
         "about_text": "Cai Install - Версия Fluent Design\n\nВерсия: 1.3\n\nЭто современный инструмент разблокировки игр Steam на основе PyQt6-Fluent-Widgets.\n\nФункции:\n• Стиль Fluent Design\n• Поддержка нескольких источников манифестов\n• Поиск и добавление игр\n• Управление установленными играми\n• Настройка темы\n\nURL проекта: https://github.com/zhouchentao666/Cai-install-Fluent-GUI",
         "thanks_text": "Особая благодарность\n\nРазработчики:\n• zhouchentao666 - Разработчик\n\nПроекты с открытым исходным кодом:\n• PyQt6 - Привязки Python Qt6\n• PyQt-Fluent-Widgets - Библиотека компонентов Fluent Design\n• Cai-install-Web-GUI - Автор оригинального проекта\n• httpx - Асинхронный HTTP клиент\n\nИсточники манифестов:\n• SWA V2\n• Cysaw\n• Furcate\n• Walftech\n• steamdatabase\n• SteamAutoCracks\n• Sudama\n• Библиотека помощи манифеста\n\nСпасибо всем разработчикам и пользователям, внесшим вклад в этот проект!",
+        "donate": "Пожертвовать",
+        "donate_title": "Поддержать разработчика",
+        "donate_desc": "Если проект оказался полезным, угостите автора кофе ☕",
+        "donate_wechat": "WeChat Pay",
+        "donate_alipay": "Alipay",
+        "donate_loading": "Загрузка...",
+        "donate_load_failed": "Не удалось загрузить изображение",
+        "fixed_version": "Фиксированная версия",
+        "auto_update": "Авто обновление",
+        "toggle_version_mode": "Переключить режим версии",
+        "st_settings": "Настройки SteamTools",
+        "st_settings_hint": "Управление режимом версий файлов SteamTools",
+        "st_fixed_enable": "Включить режим фиксированной версии SteamTools",
+        "st_fixed_tooltip": "Новые файлы SteamTools будут использовать режим фиксированной версии по умолчанию",
+        "name_not_found": "Имя не найдено",
+        "fetch_failed": "Ошибка получения",
     },
     "de_DE": {
         "app_title": "FluentInstall",
@@ -748,6 +811,22 @@ TEXTS = {
         "thanks_title": "Danksagungen",
         "about_text": "Cai Install - Fluent Design Version\n\nVersion: \n1.3\nDies ist ein modernes Steam-Spiel-Unlocking-Tool basierend auf PyQt6-Fluent-Widgets.\n\nFunktionen:\n• Fluent Design Stil\n• Unterstützung für mehrere Manifest-Quellen\n• Spielsuche und -hinzufügen\n• Verwaltung installierter Spiele\n• Themen-Anpassung\n\nProjekt-URL: https://github.com/zhouchentao666/Cai-install-Fluent-GUI",
         "thanks_text": "Besondere Danksagung\n\nEntwickler:\n• zhouchentao666 - Entwickler\n\nOpen-Source-Projekte:\n• PyQt6 - Qt6 Python Bindings\n• PyQt-Fluent-Widgets - Fluent Design Komponentenbibliothek\n• Cai-install-Web-GUI - Originalprojekt-Autor\n• httpx - Asynchroner HTTP-Client\n\nManifest-Quellen:\n• SWA V2\n• Cysaw\n• Furcate\n• Walftech\n• steamdatabase\n• SteamAutoCracks\n• Sudama\n• Manifest-Hilfsbibliothek\n\nVielen Dank an alle Entwickler und Benutzer, die zu diesem Projekt beigetragen haben!",
+        "donate": "Spenden",
+        "donate_title": "Entwickler unterstützen",
+        "donate_desc": "Wenn dieses Projekt hilfreich war, spendieren Sie dem Autor einen Kaffee ☕",
+        "donate_wechat": "WeChat Pay",
+        "donate_alipay": "Alipay",
+        "donate_loading": "Laden...",
+        "donate_load_failed": "Bild konnte nicht geladen werden",
+        "fixed_version": "Feste Version",
+        "auto_update": "Auto-Update",
+        "toggle_version_mode": "Versionsmodus wechseln",
+        "st_settings": "SteamTools-Einstellungen",
+        "st_settings_hint": "Versionsverwaltungsmodus für SteamTools-Dateien steuern",
+        "st_fixed_enable": "SteamTools Feste Version aktivieren",
+        "st_fixed_tooltip": "Neue SteamTools-Dateien verwenden standardmäßig den festen Versionsmodus",
+        "name_not_found": "Name nicht gefunden",
+        "fetch_failed": "Abruf fehlgeschlagen",
     },
     "ja_JP": {
         "app_title": "FluentInstall",
@@ -879,6 +958,22 @@ TEXTS = {
         "thanks_title": "謝辞",
         "about_text": "Cai Install - Fluent Design バージョン\n\nバージョン: 1.3\n\nこれはPyQt6-Fluent-WidgetsをベースにしたモダンなSteamゲームアンロックツールです。\n\n機能:\n• Fluent Designスタイル\n• 複数のマニフェストソースをサポート\n• ゲーム検索と追加\n• インストール済みゲームの管理\n• テーマカスタマイズ\n\nプロジェクトURL: https://github.com/zhouchentao666/Cai-install-Fluent-GUI",
         "thanks_text": "特別な感謝\n\n開発者:\n• zhouchentao666 - 開発者\n\nオープンソースプロジェクト:\n• PyQt6 - Qt6 Pythonバインディング\n• PyQt-Fluent-Widgets - Fluent Designコンポーネントライブラリ\n• Cai-install-Web-GUI - オリジナルプロジェクト作成者\n• httpx - 非同期HTTPクライアント\n\nマニフェストソース:\n• SWA V2\n• Cysaw\n• Furcate\n• Walftech\n• steamdatabase\n• SteamAutoCracks\n• Sudama\n• マニフェストヘルパーライブラリ\n\nこのプロジェクトに貢献してくれたすべての開発者とユーザーの皆様に感謝します！",
+        "donate": "寄付",
+        "donate_title": "開発者を支援",
+        "donate_desc": "このプロジェクトが役に立った場合は、作者にコーヒーをご馳走ください ☕",
+        "donate_wechat": "WeChat Pay",
+        "donate_alipay": "Alipay",
+        "donate_loading": "読み込み中...",
+        "donate_load_failed": "画像の読み込みに失敗しました",
+        "fixed_version": "固定バージョン",
+        "auto_update": "自動更新",
+        "toggle_version_mode": "バージョンモード切替",
+        "st_settings": "SteamTools設定",
+        "st_settings_hint": "SteamToolsファイルのバージョン管理モードを制御",
+        "st_fixed_enable": "SteamTools固定バージョンモードを有効にする",
+        "st_fixed_tooltip": "新しいSteamToolsファイルはデフォルトで固定バージョンモードを使用します",
+        "name_not_found": "名前が見つかりません",
+        "fetch_failed": "取得失敗",
     },
     "zh_TW": {
         "app_title": "流暢入库",
@@ -1019,6 +1114,22 @@ TEXTS = {
         "thanks_title": "感謝",
         "about_text": "Cai Install - Fluent Design 版本\n\n版本: 1.3\n\n這是一套基於 PyQt6-Fluent-Widgets 的現代化 Steam 遊戲解鎖工具。\n\n功能特色:\n• Fluent Design 設計風格\n• 支援多種清單來源\n• 遊戲搜尋與入库\n• 已入库遊戲管理\n• 佈景主題自訂\n\n專案位址: https://github.com/zhouchentao666/Cai-install-Fluent-GUI",
         "thanks_text": "特別感謝\n\n開發者:\n• zhouchentao666 - 製作人員\n\n開源專案:\n• PyQt6 - Qt6 Python 綁定\n• PyQt-Fluent-Widgets - Fluent Design 元件庫\n• Cai-install-Web-GUI - 原始專案作者\n• httpx - 非同步 HTTP 用戶端\n\n清單來源提供:\n• SWA V2\n• Cysaw\n• Furcate\n• Walftech\n• steamdatabase\n• SteamAutoCracks\n• Sudama\n• 清單不求人\n\n感謝所有為本專案貢獻的開發者與使用者！",
+        "donate": "捐贈",
+        "donate_title": "支持開發者",
+        "donate_desc": "如果本專案對你有幫助，歡迎請作者喝杯咖啡 ☕",
+        "donate_wechat": "微信支付",
+        "donate_alipay": "支付寶",
+        "donate_loading": "載入中...",
+        "donate_load_failed": "圖片載入失敗",
+        "fixed_version": "固定版本",
+        "auto_update": "自動更新",
+        "toggle_version_mode": "切換版本模式",
+        "st_settings": "SteamTools 設定",
+        "st_settings_hint": "控制SteamTools檔案的版本管理模式",
+        "st_fixed_enable": "啟用 SteamTools 固定版本模式",
+        "st_fixed_tooltip": "新增的SteamTools檔案預設使用固定版本模式",
+        "name_not_found": "名稱未找到",
+        "fetch_failed": "獲取失敗",
     },
 }
 
@@ -1067,11 +1178,12 @@ class SafeFlowLayout(FlowLayout):
 class GameCard(CardWidget):
     """游戏卡片组件"""
     
-    def __init__(self, appid, game_name, source_type, parent=None):
+    def __init__(self, appid, game_name, source_type, parent=None, mode="auto"):
         super().__init__(parent)
         self.appid = appid
         self.game_name = game_name
         self.source_type = source_type  # 'st' 或 'gl'
+        self.mode = mode  # 'auto' 或 'fixed'
         
         # 网络管理器（先初始化）
         self.network_manager = QNetworkAccessManager(self)
@@ -1090,7 +1202,7 @@ class GameCard(CardWidget):
         # 游戏标题
         # 如果游戏名称为空或显示为"名称未找到"等，显示AppID
         display_name = game_name
-        if not game_name or game_name == '名称未找到' or game_name == '获取失败' or game_name == tr('unknown_game'):
+        if not game_name or game_name in ('名称未找到', '获取失败', tr('name_not_found'), tr('fetch_failed'), tr('unknown_game')):
             display_name = f"AppID: {appid}"
         self.titleLabel = BodyLabel(display_name, self)
         self.titleLabel.setWordWrap(False)
@@ -1100,11 +1212,27 @@ class GameCard(CardWidget):
         self.infoLabel = CaptionLabel(f"AppID: {appid} | {source_text}", self)
         self.infoLabel.setTextColor("#606060", "#d2d2d2")
         
+        # 版本模式标签（仅SteamTools）
+        self.modeLabel = None
+        if source_type == "st":
+            mode_text = tr("fixed_version") if mode == "fixed" else tr("auto_update")
+            mode_color = "#ff9800" if mode == "fixed" else "#6ee7b7"
+            self.modeLabel = CaptionLabel(mode_text, self)
+            self.modeLabel.setTextColor(mode_color, mode_color)
+        
         # 删除按钮
         self.deleteButton = TransparentToolButton(FluentIcon.DELETE, self)
         self.deleteButton.setFixedSize(32, 32)
         self.deleteButton.setToolTip(tr("delete"))
         self.deleteButton.clicked.connect(self.on_delete_clicked)
+        
+        # 版本切换按钮（仅SteamTools）
+        self.toggleButton = None
+        if source_type == "st":
+            self.toggleButton = TransparentToolButton(FluentIcon.UPDATE, self)
+            self.toggleButton.setFixedSize(32, 32)
+            self.toggleButton.setToolTip(tr("toggle_version_mode"))
+            self.toggleButton.clicked.connect(self.on_toggle_clicked)
         
         # 设置布局
         self.setFixedHeight(80)
@@ -1117,10 +1245,16 @@ class GameCard(CardWidget):
         self.vBoxLayout.setSpacing(4)
         self.vBoxLayout.addWidget(self.titleLabel, 0, Qt.AlignmentFlag.AlignVCenter)
         self.vBoxLayout.addWidget(self.infoLabel, 0, Qt.AlignmentFlag.AlignVCenter)
+        # 添加版本模式标签（仅SteamTools）
+        if self.modeLabel:
+            self.vBoxLayout.addWidget(self.modeLabel, 0, Qt.AlignmentFlag.AlignVCenter)
         self.vBoxLayout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
         
         self.hBoxLayout.addLayout(self.vBoxLayout)
         self.hBoxLayout.addStretch(1)
+        # 添加版本切换按钮（仅SteamTools）
+        if self.toggleButton:
+            self.hBoxLayout.addWidget(self.toggleButton, 0, Qt.AlignmentFlag.AlignRight)
         self.hBoxLayout.addWidget(self.deleteButton, 0, Qt.AlignmentFlag.AlignRight)
         
         # 加载封面（最后执行）
@@ -1152,16 +1286,49 @@ class GameCard(CardWidget):
                 parent = parent.parent()
             if parent:
                 parent.delete_game(self.appid, self.source_type)
+    
+    def on_toggle_clicked(self):
+        """版本切换按钮点击"""
+        if self.parent():
+            parent = self.parent()
+            while parent and not isinstance(parent, HomePage):
+                parent = parent.parent()
+            if parent:
+                # 构造ST文件名
+                filename = f"{self.appid}.lua"
+                parent.toggle_st_version(filename, self.appid)
+    
+    def update_mode_label(self, is_fixed):
+        """更新版本模式标签"""
+        if self.modeLabel:
+            if is_fixed:
+                self.modeLabel.setText(tr("fixed_version"))
+                self.modeLabel.setTextColor("#ff9800", "#ff9800")
+            else:
+                self.modeLabel.setText(tr("auto_update"))
+                self.modeLabel.setTextColor("#6ee7b7", "#6ee7b7")
+    
+    def on_toggle_clicked(self):
+        """版本切换按钮点击"""
+        if self.parent():
+            parent = self.parent()
+            while parent and not isinstance(parent, HomePage):
+                parent = parent.parent()
+            if parent:
+                # 构造ST文件名
+                filename = f"{self.appid}.lua"
+                parent.toggle_st_version(filename, self.appid)
 
 
 class GameCardGrid(CardWidget):
     """游戏卡片组件 - 网格视图模式"""
     
-    def __init__(self, appid, game_name, source_type, parent=None):
+    def __init__(self, appid, game_name, source_type, parent=None, mode="auto"):
         super().__init__(parent)
         self.appid = appid
         self.game_name = game_name
         self.source_type = source_type  # 'st' 或 'gl'
+        self.mode = mode  # 'auto' 或 'fixed'
         
         # 网络管理器（先初始化）
         self.network_manager = QNetworkAccessManager(self)
@@ -1180,7 +1347,7 @@ class GameCardGrid(CardWidget):
         
         # 游戏标题
         display_name = game_name
-        if not game_name or game_name == '名称未找到' or game_name == '获取失败' or game_name == tr('unknown_game'):
+        if not game_name or game_name in ('名称未找到', '获取失败', tr('name_not_found'), tr('fetch_failed'), tr('unknown_game')):
             display_name = f"AppID: {appid}"
         self.titleLabel = BodyLabel(display_name, self)
         self.titleLabel.setWordWrap(True)
@@ -1194,11 +1361,28 @@ class GameCardGrid(CardWidget):
         self.infoLabel.setTextColor("#606060", "#d2d2d2")
         self.infoLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
+        # 版本模式标签（仅SteamTools）
+        self.modeLabel = None
+        if source_type == "st":
+            mode_text = tr("fixed_version") if mode == "fixed" else tr("auto_update")
+            mode_color = "#ff9800" if mode == "fixed" else "#6ee7b7"
+            self.modeLabel = CaptionLabel(mode_text, self)
+            self.modeLabel.setTextColor(mode_color, mode_color)
+            self.modeLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
         # 删除按钮
         self.deleteButton = TransparentToolButton(FluentIcon.DELETE, self)
         self.deleteButton.setFixedSize(32, 32)
         self.deleteButton.setToolTip(tr("delete"))
         self.deleteButton.clicked.connect(self.on_delete_clicked)
+        
+        # 版本切换按钮（仅SteamTools）
+        self.toggleButton = None
+        if source_type == "st":
+            self.toggleButton = TransparentToolButton(FluentIcon.UPDATE, self)
+            self.toggleButton.setFixedSize(32, 32)
+            self.toggleButton.setToolTip(tr("toggle_version_mode"))
+            self.toggleButton.clicked.connect(self.on_toggle_clicked)
         
         # 设置布局
         self.setFixedSize(200, 250)  # 稍微减小高度
@@ -1210,7 +1394,16 @@ class GameCardGrid(CardWidget):
         self.vBoxLayout.addSpacing(3)  # 标题和信息之间的小间距
         self.vBoxLayout.addWidget(self.infoLabel, 0, Qt.AlignmentFlag.AlignHCenter)
         self.vBoxLayout.addSpacing(8)  # 信息和按钮之间的适中间距
-        self.vBoxLayout.addWidget(self.deleteButton, 0, Qt.AlignmentFlag.AlignHCenter)
+        # 按钮行：版本标签 + 切换 + 删除 同一行
+        btnLayout = QHBoxLayout()
+        btnLayout.setSpacing(6)
+        btnLayout.setContentsMargins(0, 0, 0, 0)
+        if self.modeLabel:
+            btnLayout.addWidget(self.modeLabel)
+        if self.toggleButton:
+            btnLayout.addWidget(self.toggleButton)
+        btnLayout.addWidget(self.deleteButton)
+        self.vBoxLayout.addLayout(btnLayout)
         self.vBoxLayout.addSpacing(5)  # 底部小间距
         
         # 加载封面（最后执行）
@@ -1243,10 +1436,30 @@ class GameCardGrid(CardWidget):
             if parent:
                 parent.delete_game(self.appid, self.source_type)
 
+    def on_toggle_clicked(self):
+        """版本切换按钮点击"""
+        if self.parent():
+            parent = self.parent()
+            while parent and not isinstance(parent, HomePage):
+                parent = parent.parent()
+            if parent:
+                filename = f"{self.appid}.lua"
+                parent.toggle_st_version(filename, self.appid)
+
+    def update_mode_label(self, is_fixed):
+        """更新版本模式标签"""
+        if self.modeLabel:
+            if is_fixed:
+                self.modeLabel.setText(tr("fixed_version"))
+                self.modeLabel.setTextColor("#ff9800", "#ff9800")
+            else:
+                self.modeLabel.setText(tr("auto_update"))
+                self.modeLabel.setTextColor("#6ee7b7", "#6ee7b7")
+
 
 class AsyncWorker(QThread):
     """异步工作线程"""
-    finished = pyqtSignal(object)
+    result_ready = pyqtSignal(object)
     error = pyqtSignal(str)
     
     def __init__(self, coro):
@@ -1259,21 +1472,17 @@ class AsyncWorker(QThread):
             self._loop = asyncio.new_event_loop()
             asyncio.set_event_loop(self._loop)
             result = self._loop.run_until_complete(self.coro)
-            self.finished.emit(result)
+            self.result_ready.emit(result)
         except Exception as e:
             self.error.emit(str(e))
         finally:
-            # 确保正确清理事件循环
             if self._loop:
                 try:
-                    # 取消所有pending任务
                     pending = asyncio.all_tasks(self._loop) if hasattr(asyncio, 'all_tasks') else []
                     if pending:
                         for task in pending:
                             task.cancel()
                         self._loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
-                    
-                    # 关闭事件循环
                     if not self._loop.is_closed():
                         self._loop.close()
                 except Exception:
@@ -1402,12 +1611,13 @@ class HomePage(ScrollArea):
         async def _load():
             async with CaiBackend() as backend:
                 await backend.initialize()
-                files_data = await backend.get_managed_files()
+                files_data = await backend.get_managed_files(get_steam_lang(current_language))
                 return files_data
         
         self.worker = AsyncWorker(_load())
-        self.worker.finished.connect(self.on_games_loaded)
+        self.worker.result_ready.connect(self.on_games_loaded)
         self.worker.error.connect(self.on_load_error)
+        self.worker.finished.connect(self.worker.deleteLater)
         self.worker.start()
     
     def refresh_games(self):
@@ -1422,7 +1632,7 @@ class HomePage(ScrollArea):
         
         # 恢复刷新按钮状态（在加载完成后）
         if self.worker:
-            self.worker.finished.connect(lambda: self.on_refresh_complete())
+            self.worker.result_ready.connect(lambda: self.on_refresh_complete())
             self.worker.error.connect(lambda: self.on_refresh_complete())
     
     def on_refresh_complete(self):
@@ -1480,16 +1690,17 @@ class HomePage(ScrollArea):
         for source_type, game in sorted_games:
             appid = game.get('appid', 'N/A')
             game_name = game.get('game_name', '')
+            mode = game.get('mode', 'auto')  # 获取版本模式信息
             
             # 如果游戏名称为空或显示为"名称未找到"，显示更友好的提示
-            if not game_name or game_name == '名称未找到' or game_name == '获取失败':
+            if not game_name or game_name in ('名称未找到', '获取失败', tr('name_not_found'), tr('fetch_failed')):
                 game_name = f"AppID {appid}"
             
             # 根据视图模式创建不同类型的卡片
             if self.current_view_mode == "grid":
-                card = GameCardGrid(appid, game_name, source_type, self)
+                card = GameCardGrid(appid, game_name, source_type, self, mode)
             else:
-                card = GameCard(appid, game_name, source_type, self)
+                card = GameCard(appid, game_name, source_type, self, mode)
             
             self.card_layout.addWidget(card)
             self.game_cards.append(card)
@@ -1618,8 +1829,9 @@ class HomePage(ScrollArea):
                     return result
             
             self.delete_worker = AsyncWorker(_delete())
-            self.delete_worker.finished.connect(lambda result: self.on_delete_complete(result, appid))
+            self.delete_worker.result_ready.connect(lambda result: self.on_delete_complete(result, appid))
             self.delete_worker.error.connect(self.on_delete_error)
+            self.delete_worker.finished.connect(self.delete_worker.deleteLater)
             self.delete_worker.start()
             
             InfoBar.info(
@@ -1655,6 +1867,63 @@ class HomePage(ScrollArea):
         """删除失败"""
         InfoBar.error(
             title=tr("delete_failed"),
+            content=error,
+            parent=self,
+            position=InfoBarPosition.TOP
+        )
+
+    def toggle_st_version(self, filename, appid):
+        """切换ST文件版本模式（自动更新/固定版本）"""
+        async def _toggle():
+            async with CaiBackend() as backend:
+                await backend.initialize()
+                result = await backend.toggle_st_version(filename)
+                return result
+        
+        self.toggle_worker = AsyncWorker(_toggle())
+        self.toggle_worker.result_ready.connect(lambda result: self.on_toggle_st_version_complete(result, appid))
+        self.toggle_worker.error.connect(self.on_toggle_st_version_error)
+        self.toggle_worker.finished.connect(self.toggle_worker.deleteLater)
+        self.toggle_worker.start()
+        
+        InfoBar.info(
+            title="版本切换",
+            content=f"正在切换 AppID {appid} 的版本模式...",
+            parent=self,
+            position=InfoBarPosition.TOP
+        )
+    
+    @pyqtSlot(object)
+    def on_toggle_st_version_complete(self, result, appid):
+        """ST文件版本切换完成"""
+        if result.get('success'):
+            InfoBar.success(
+                title="切换成功",
+                content=result.get('message', '版本模式已切换'),
+                parent=self,
+                position=InfoBarPosition.TOP
+            )
+            # 更新对应卡片的版本模式标签
+            for card in self.game_cards:
+                if hasattr(card, 'appid') and card.appid == appid and hasattr(card, 'source_type') and card.source_type == 'st':
+                    # 从消息中判断新的模式
+                    message = result.get('message', '')
+                    is_fixed = '固定版本' in message
+                    card.update_mode_label(is_fixed)
+                    break
+        else:
+            InfoBar.error(
+                title="切换失败",
+                content=result.get('message', '未知错误'),
+                parent=self,
+                position=InfoBarPosition.TOP
+            )
+    
+    @pyqtSlot(str)
+    def on_toggle_st_version_error(self, error):
+        """ST文件版本切换失败"""
+        InfoBar.error(
+            title="切换失败",
             content=error,
             parent=self,
             position=InfoBarPosition.TOP
@@ -1991,7 +2260,7 @@ class SearchPage(ScrollArea):
         self.search_input.setPlaceholderText(tr("game_name_or_appid"))
         self.search_input.setFixedHeight(40)
         self.search_input.searchSignal.connect(self.on_search)
-        self.search_input.textChanged.connect(self.on_search_text_changed)
+        self.search_input.returnPressed.connect(self.on_search)
         search_row_layout.addWidget(self.search_input)
         
         # 视图模式选择
@@ -2087,7 +2356,6 @@ class SearchPage(ScrollArea):
         self.search_worker = None
         self.unlock_worker = None
         self.result_cards = []
-        self.search_timer = None
         self.search_results = []  # 存储搜索结果用于排序
         
         # 加载保存的清单源选择
@@ -2217,29 +2485,9 @@ class SearchPage(ScrollArea):
         if hasattr(self, '_manifest_worker') and self._manifest_worker:
             if self._manifest_worker.isRunning():
                 self._manifest_worker.quit()
-                self._manifest_worker.wait(1000)  # 最多等待1秒
+                self._manifest_worker.wait(1000)
             self._manifest_worker.deleteLater()
             self._manifest_worker = None
-        
-        # 清理定时器
-        if hasattr(self, 'search_timer') and self.search_timer:
-            self.search_timer.stop()
-            self.search_timer.deleteLater()
-            self.search_timer = None
-    
-    def on_search_text_changed(self):
-        """搜索文本变化时自动搜索"""
-        # 延迟搜索，避免频繁搜索
-        if self.search_timer:
-            self.search_timer.stop()
-        else:
-            from PyQt6.QtCore import QTimer
-            self.search_timer = QTimer()
-            self.search_timer.timeout.connect(self.on_search)
-            self.search_timer.setSingleShot(True)
-        
-        # 延迟500ms搜索
-        self.search_timer.start(500)
     
     def on_manifest_source_changed(self):
         """清单源选择改变时保存偏好"""
@@ -2282,8 +2530,9 @@ class SearchPage(ScrollArea):
             self._manifest_worker.wait()
         
         self._manifest_worker = AsyncWorker(_save())
-        self._manifest_worker.finished.connect(self._on_manifest_save_complete)
+        self._manifest_worker.result_ready.connect(self._on_manifest_save_complete)
         self._manifest_worker.error.connect(self._on_manifest_save_error)
+        self._manifest_worker.finished.connect(self._manifest_worker.deleteLater)
         self._manifest_worker.start()
     
     def _on_manifest_save_complete(self, result):
@@ -2463,30 +2712,38 @@ class SearchPage(ScrollArea):
                     return {'type': 'appid', 'appid': appid}
                 else:
                     # 搜索游戏名称
-                    results = await backend.find_appid_by_name(query)
+                    results = await backend.find_appid_by_name(query, get_steam_lang(current_language))
                     return {'type': 'search', 'results': results}
         
         # 确保之前的搜索worker已清理
-        if hasattr(self, 'search_worker') and self.search_worker and self.search_worker.isRunning():
-            self.search_worker.quit()
-            self.search_worker.wait()
+        if hasattr(self, 'search_worker') and self.search_worker:
+            try:
+                if self.search_worker.isRunning():
+                    self.search_worker.quit()
+                    self.search_worker.wait(5000)
+            except RuntimeError:
+                pass
+            self.search_worker = None
         
-        self.search_worker = AsyncWorker(_search())
-        self.search_worker.finished.connect(self.on_search_complete)
-        self.search_worker.error.connect(self.on_search_error)
-        self.search_worker.start()
+        worker = AsyncWorker(_search())
+        self.search_worker = worker
+        worker.result_ready.connect(self.on_search_complete)
+        worker.error.connect(self.on_search_error)
+        worker.finished.connect(worker.deleteLater)
+        worker.start()
     
 
     
     @pyqtSlot(object)
     def on_search_complete(self, result):
         """搜索完成"""
-        # 清理搜索worker引用
-        if hasattr(self, 'search_worker') and self.search_worker:
-            self.search_worker.deleteLater()
-            self.search_worker = None
-        
-        # 无进度环，直接处理结果
+        worker = self.search_worker
+        self.search_worker = None
+        if worker:
+            try:
+                worker.deleteLater()
+            except RuntimeError:
+                pass
         
         if result['type'] == 'appid':
             # 直接是 AppID，自动开始入库
@@ -2634,10 +2891,13 @@ class SearchPage(ScrollArea):
     @pyqtSlot(str)
     def on_search_error(self, error):
         """搜索失败"""
-        # 清理搜索worker引用
-        if hasattr(self, 'search_worker') and self.search_worker:
-            self.search_worker.deleteLater()
-            self.search_worker = None
+        worker = self.search_worker
+        self.search_worker = None
+        if worker:
+            try:
+                worker.deleteLater()
+            except RuntimeError:
+                pass
         
         InfoBar.error(
             title=tr("search_failed"),
@@ -2720,8 +2980,9 @@ class SearchPage(ScrollArea):
             self.unlock_worker.wait()
         
         self.unlock_worker = AsyncWorker(_unlock())
-        self.unlock_worker.finished.connect(self.on_unlock_complete)
+        self.unlock_worker.result_ready.connect(self.on_unlock_complete)
         self.unlock_worker.error.connect(self.on_unlock_error)
+        self.unlock_worker.finished.connect(self.unlock_worker.deleteLater)
         self.unlock_worker.start()
     
     @pyqtSlot(object)
@@ -2840,6 +3101,7 @@ class SettingsPage(ScrollArea):
         self.color_combo = None
         self.lang_combo = None
         self.effect_combo = None
+        self.st_fixed_check = None
         
         # 添加其他设置卡片（应用程序配置、外观设置等）
         self._setup_additional_settings(layout)
@@ -2876,6 +3138,11 @@ class SettingsPage(ScrollArea):
         self.unlocker_combo.setCurrentIndex(0)
         self.unlocker_combo.setFixedWidth(180)
         app_config_card.addGroup(FluentIcon.SETTING, tr("unlocker_mode"), tr("force_unlocker_hint"), self.unlocker_combo)
+        
+        # SteamTools固定版本模式（全局设置）
+        self.st_fixed_check = CheckBox(tr("st_fixed_enable"))
+        self.st_fixed_check.setToolTip(tr("st_fixed_tooltip"))
+        app_config_card.addGroup(FluentIcon.SETTING, tr("st_settings"), tr("st_settings_hint"), self.st_fixed_check)
         
         # 入库超时时间
         self.timeout_spinbox = SpinBox()
@@ -2954,32 +3221,33 @@ class SettingsPage(ScrollArea):
         
         self.about_btn = PushButton(tr("about"))
         self.about_btn.clicked.connect(self.show_about)
-        self.about_btn.setFixedWidth(100)
+        self.about_btn.setFixedWidth(80)
         button_layout.addWidget(self.about_btn)
         
         self.thanks_btn = PushButton(tr("thanks"))
         self.thanks_btn.clicked.connect(self.show_thanks)
-        self.thanks_btn.setFixedWidth(100)
+        self.thanks_btn.setFixedWidth(80)
         button_layout.addWidget(self.thanks_btn)
         
+        self.donate_btn = PushButton(tr("donate"))
+        self.donate_btn.clicked.connect(self.show_donate)
+        self.donate_btn.setFixedWidth(80)
+        button_layout.addWidget(self.donate_btn)
+        
         self.github_btn = HyperlinkButton("https://github.com/zhouchentao666/Fluent-Install", "GitHub")
-        self.github_btn.setFixedWidth(80)
+        self.github_btn.setFixedWidth(70)
         button_layout.addWidget(self.github_btn)
         
         self.qq_btn = HyperlinkButton("https://qm.qq.com/q/gtTLap5Jw4", "Q群")
-        self.qq_btn.setFixedWidth(60)
+        self.qq_btn.setFixedWidth(50)
         button_layout.addWidget(self.qq_btn)
         
-        self.tg_group_btn = HyperlinkButton("https://t.me/+vTrqXKpRJE9kNmVl", "TG群组")
-        self.tg_group_btn.setFixedWidth(75)
+        self.tg_group_btn = HyperlinkButton("https://t.me/+vTrqXKpRJE9kNmVl", "TG")
+        self.tg_group_btn.setFixedWidth(50)
         button_layout.addWidget(self.tg_group_btn)
         
-        self.tg_channel_btn = HyperlinkButton("https://t.me/FluentInstall", "TG频道")
-        self.tg_channel_btn.setFixedWidth(75)
-        button_layout.addWidget(self.tg_channel_btn)
-        
         self.discord_btn = HyperlinkButton("https://discord.gg/2qh68QRMuA", "Discord")
-        self.discord_btn.setFixedWidth(80)
+        self.discord_btn.setFixedWidth(70)
         button_layout.addWidget(self.discord_btn)
         
         button_layout.addStretch(1)
@@ -3011,6 +3279,10 @@ class SettingsPage(ScrollArea):
         # 下拉框
         if self.unlocker_combo:
             self.unlocker_combo.currentIndexChanged.connect(self._on_setting_changed)
+        
+        # SteamTools固定版本
+        if self.st_fixed_check:
+            self.st_fixed_check.stateChanged.connect(self._on_setting_changed)
         
         # 入库超时时间
         if self.timeout_spinbox:
@@ -3215,6 +3487,80 @@ class SettingsPage(ScrollArea):
         dialog = MessageBox(tr("thanks_title"), thanks_text, self.window())
         dialog.exec()
     
+    def show_donate(self):
+        """显示捐赠对话框"""
+        from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QLabel
+        from PyQt6.QtCore import Qt, QUrl
+        from PyQt6.QtGui import QPixmap
+        from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply
+
+        class DonateDialog(MessageBoxBase):
+            def __init__(self, parent=None):
+                super().__init__(parent)
+                self.titleLabel = TitleLabel(tr("donate_title"), self)
+
+                desc = BodyLabel(tr("donate_desc"), self)
+                desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                desc.setWordWrap(True)
+
+                qr_layout = QHBoxLayout()
+                qr_layout.setSpacing(24)
+
+                def make_qr_box(title_text):
+                    box = QVBoxLayout()
+                    title = BodyLabel(title_text)
+                    title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                    img = QLabel(tr("donate_loading"))
+                    img.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                    img.setFixedSize(200, 200)
+                    img.setStyleSheet("border: 1px solid rgba(128,128,128,0.3); border-radius: 6px;")
+                    box.addWidget(title)
+                    box.addWidget(img)
+                    return box, img
+
+                wechat_box, self.wechat_img = make_qr_box(tr("donate_wechat"))
+                alipay_box, self.alipay_img = make_qr_box(tr("donate_alipay"))
+                qr_layout.addLayout(wechat_box)
+                qr_layout.addLayout(alipay_box)
+
+                self.viewLayout.addWidget(self.titleLabel)
+                self.viewLayout.addWidget(desc)
+                self.viewLayout.addLayout(qr_layout)
+
+                self.yesButton.setText("OK")
+                self.cancelButton.hide()
+                self.widget.setMinimumWidth(480)
+
+        dialog = DonateDialog(self.window())
+
+        self._donate_nam = QNetworkAccessManager()
+
+        def make_handler(reply, label):
+            def on_finished():
+                if reply.error() == QNetworkReply.NetworkError.NoError:
+                    data = reply.readAll()
+                    pixmap = QPixmap()
+                    pixmap.loadFromData(data)
+                    if not pixmap.isNull():
+                        label.setPixmap(pixmap.scaled(200, 200, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+                        label.setText("")
+                    else:
+                        label.setText(tr("donate_load_failed"))
+                else:
+                    label.setText(tr("donate_load_failed"))
+            return on_finished
+
+        wechat_url = "https://pub-141831e61e69445289222976a15b6fb3.r2.dev/Image_to_url_V2/6188237576876003069_121-imagetourl.cloud-1774005513945-35nyye.jpg"
+        alipay_url = "https://pub-141831e61e69445289222976a15b6fb3.r2.dev/Image_to_url_V2/6188237576876003068_121-imagetourl.cloud-1774005511802-siuw87.jpg"
+
+        reply1 = self._donate_nam.get(QNetworkRequest(QUrl(wechat_url)))
+        reply1.finished.connect(make_handler(reply1, dialog.wechat_img))
+
+        reply2 = self._donate_nam.get(QNetworkRequest(QUrl(alipay_url)))
+        reply2.finished.connect(make_handler(reply2, dialog.alipay_img))
+
+        dialog.exec()
+    
     def load_config(self):
         """加载配置"""
         async def _load():
@@ -3223,8 +3569,9 @@ class SettingsPage(ScrollArea):
                 return config
         
         self.worker = AsyncWorker(_load())
-        self.worker.finished.connect(self.on_config_loaded)
+        self.worker.result_ready.connect(self.on_config_loaded)
         self.worker.error.connect(self.on_load_error)
+        self.worker.finished.connect(self.worker.deleteLater)
         self.worker.start()
     
     @pyqtSlot(object)
@@ -3252,6 +3599,10 @@ class SettingsPage(ScrollArea):
                     self.unlocker_combo.setCurrentIndex(2)
                 else:
                     self.unlocker_combo.setCurrentIndex(0)
+            
+            # 加载SteamTools固定版本设置
+            if self.st_fixed_check:
+                self.st_fixed_check.setChecked(config.get("ST_Fixed_Version", False))
             
             # 加载入库超时时间
             if self.timeout_spinbox:
@@ -3379,6 +3730,10 @@ class SettingsPage(ScrollArea):
                 unlocker_map = {0: "auto", 1: "steamtools", 2: "greenluma"}
                 config["force_unlocker_type"] = unlocker_map.get(self.unlocker_combo.currentIndex(), "auto")
             
+            # 保存SteamTools固定版本设置
+            if self.st_fixed_check:
+                config["ST_Fixed_Version"] = self.st_fixed_check.isChecked()
+            
             # 保存入库超时时间
             if self.timeout_spinbox:
                 config["download_timeout"] = self.timeout_spinbox.value()
@@ -3416,8 +3771,9 @@ class SettingsPage(ScrollArea):
             return True
         
         self.worker = AsyncWorker(_save())
-        self.worker.finished.connect(self.on_save_success)
+        self.worker.result_ready.connect(self.on_save_success)
         self.worker.error.connect(self.on_save_error)
+        self.worker.finished.connect(self.worker.deleteLater)
         self.worker.start()
     
     @pyqtSlot(object)
@@ -3474,8 +3830,9 @@ class SettingsPage(ScrollArea):
                 return True
             
             self.worker = AsyncWorker(_reset())
-            self.worker.finished.connect(self.on_reset_success)
+            self.worker.result_ready.connect(self.on_reset_success)
             self.worker.error.connect(self.on_reset_error)
+            self.worker.finished.connect(self.worker.deleteLater)
             self.worker.start()
     
     @pyqtSlot(object)
@@ -3607,8 +3964,9 @@ class MainWindow(MSFluentWindow):
                     return success
             
             self.restart_steam_worker = AsyncWorker(_restart())
-            self.restart_steam_worker.finished.connect(self.on_restart_complete)
+            self.restart_steam_worker.result_ready.connect(self.on_restart_complete)
             self.restart_steam_worker.error.connect(self.on_restart_error)
+            self.restart_steam_worker.finished.connect(self.restart_steam_worker.deleteLater)
             self.restart_steam_worker.start()
             
             InfoBar.info(
