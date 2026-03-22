@@ -4,9 +4,10 @@ Cai Install - Fluent Design 版本
 """
 import sys
 import asyncio
+import logging
 from pathlib import Path
 from typing import Optional
-from PyQt6.QtCore import Qt, QSize, pyqtSignal, QThread, pyqtSlot, QUrl, QLocale, QTranslator
+from PyQt6.QtCore import Qt, QSize, pyqtSignal, QThread, pyqtSlot, QUrl, QLocale, QTranslator, QObject
 from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel
 from PyQt6.QtGui import QIcon, QPixmap, QFont
 from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply
@@ -57,6 +58,23 @@ LANGUAGES = {
         "locale": QLocale(QLocale.Language.Chinese, QLocale.Country.Taiwan)
     }
 }
+
+class QtLogHandler(QObject, logging.Handler):
+    """将 logging 日志转发到 Qt 信号的 Handler"""
+    log_record = pyqtSignal(str, str)  # (level, message)
+
+    def __init__(self, parent=None):
+        QObject.__init__(self, parent)
+        logging.Handler.__init__(self)
+        self.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s', datefmt='%H:%M:%S'))
+
+    def emit(self, record):
+        try:
+            msg = self.format(record)
+            self.log_record.emit(record.levelname, msg)
+        except Exception:
+            pass
+
 
 def load_theme_config():
     """加载主题配置"""
@@ -228,7 +246,7 @@ TEXTS = {
         "reset_to_default": "重置为默认",
         "about_title": "关于",
         "thanks_title": "鸣谢",
-        "about_text": "Cai Install - Fluent Design 版本\n\n版本: 1.3\n\n这是一个基于 PyQt6-Fluent-Widgets 的现代化 Steam 游戏解锁工具。\n\n功能特性:\n• Fluent Design 设计风格\n• 支持多种清单源\n• 游戏搜索和入库\n• 已入库游戏管理\n• 主题自定义\n\n项目地址: https://github.com/zhouchentao666/Cai-install-Fluent-GUI",
+        "about_text": "Cai Install - Fluent Design 版本\n\n版本: 1.5\n\n这是一个基于 PyQt6-Fluent-Widgets 的现代化 Steam 游戏解锁工具。\n\n功能特性:\n• Fluent Design 设计风格\n• 支持多种清单源\n• 游戏搜索和入库\n• 已入库游戏管理\n• 主题自定义\n\n项目地址: https://github.com/zhouchentao666/Cai-install-Fluent-GUI",
         "thanks_text": "特别鸣谢\n\n开发者:\n• zhouchentao666 - 制作人员\n\n开源项目:\n• PyQt6 - Qt6 Python 绑定\n• PyQt-Fluent-Widgets - Fluent Design 组件库\n• Cai-install-Web-GUI - 原始项目作者\n• httpx - 异步 HTTP 客户端\n\n清单源提供:\n• SWA V2\n• Cysaw\n• Furcate\n• Walftech\n• steamdatabase\n• SteamAutoCracks\n• Sudama\n• 清单不求人\n\n社区与联系:\n• GitHub: https://github.com/zhouchentao666/Fluent-Install\n• 加入 Q 群: https://qm.qq.com/q/gtTLap5Jw4\n• TG 群组: https://t.me/+vTrqXKpRJE9kNmVl\n• TG 频道: https://t.me/FluentInstall\n• Discord: https://discord.gg/2qh68QRMuA\n\n感谢所有为本项目做出贡献的开发者和用户！",
         "donate": "捐赠",
         "donate_title": "支持开发者",
@@ -244,6 +262,8 @@ TEXTS = {
         "st_settings_hint": "控制SteamTools文件的版本管理模式",
         "st_fixed_enable": "启用 SteamTools 固定版本模式",
         "st_fixed_tooltip": "新添加的SteamTools文件默认使用固定版本模式",
+        "dlc_timeout": "DLC 联网超时时间",
+        "dlc_timeout_hint": "获取DLC列表超时时间，网络较差时可适当调大（秒）",
         "name_not_found": "名称未找到",
         "fetch_failed": "获取失败",
     },
@@ -368,7 +388,7 @@ TEXTS = {
         "reset_to_default": "Reset Default",
         "about_title": "About",
         "thanks_title": "Credits",
-        "about_text": "Cai Install - Fluent Design Version\n\nVersion: 1.3\n\nThis is a modern Steam game unlocking tool based on PyQt6-Fluent-Widgets.\n\nFeatures:\n• Fluent Design style\n• Support for multiple manifest sources\n• Game search and adding\n• Installed games management\n• Theme customization\n\nProject URL: https://github.com/zhouchentao666/Cai-install-Fluent-GUI",
+        "about_text": "Cai Install - Fluent Design Version\n\nVersion: 1.5\n\nThis is a modern Steam game unlocking tool based on PyQt6-Fluent-Widgets.\n\nFeatures:\n• Fluent Design style\n• Support for multiple manifest sources\n• Game search and adding\n• Installed games management\n• Theme customization\n\nProject URL: https://github.com/zhouchentao666/Cai-install-Fluent-GUI",
         "thanks_text": "Special Thanks\n\nDevelopers:\n• zhouchentao666 - Developer\n\nOpen Source Projects:\n• PyQt6 - Qt6 Python Bindings\n• PyQt-Fluent-Widgets - Fluent Design Component Library\n• Cai-install-Web-GUI - Original Project Author\n• httpx - Async HTTP Client\n\nManifest Sources:\n• SWA V2\n• Cysaw\n• Furcate\n• Walftech\n• steamdatabase\n• SteamAutoCracks\n• Sudama\n• Manifest Helper Library\n\nThanks to all developers and users who contributed to this project!",
         "donate": "Donate",
         "donate_title": "Support the Developer",
@@ -384,6 +404,8 @@ TEXTS = {
         "st_settings_hint": "Control SteamTools file version management mode",
         "st_fixed_enable": "Enable SteamTools Fixed Version Mode",
         "st_fixed_tooltip": "New SteamTools files will use fixed version mode by default",
+        "dlc_timeout": "DLC Network Timeout",
+        "dlc_timeout_hint": "Timeout for fetching DLC list, increase if network is slow (seconds)",
         "name_not_found": "Name Not Found",
         "fetch_failed": "Fetch Failed",
     },
@@ -515,7 +537,7 @@ TEXTS = {
         "reset_to_default": "Réinitialiser par défaut",
         "about_title": "À propos",
         "thanks_title": "Crédits",
-        "about_text": "Cai Install - Version Fluent Design\n\nVersion: 1.3\n\nCeci est un outil de déverrouillage de jeu Steam moderne basé sur PyQt6-Fluent-Widgets.\n\nFonctionnalités:\n• Style Fluent Design\n• Support de plusieurs sources de manifestes\n• Recherche et ajout de jeux\n• Gestion des jeux installés\n• Personnalisation du thème\n\nURL du projet: https://github.com/zhouchentao666/Cai-install-Fluent-GUI",
+        "about_text": "Cai Install - Version Fluent Design\n\nVersion: 1.5\n\nCeci est un outil de déverrouillage de jeu Steam moderne basé sur PyQt6-Fluent-Widgets.\n\nFonctionnalités:\n• Style Fluent Design\n• Support de plusieurs sources de manifestes\n• Recherche et ajout de jeux\n• Gestion des jeux installés\n• Personnalisation du thème\n\nURL du projet: https://github.com/zhouchentao666/Cai-install-Fluent-GUI",
         "thanks_text": "Remerciements spéciaux\n\nDéveloppeurs:\n• zhouchentao666 - Développeur\n\nProjets open source:\n• PyQt6 - Bindings Python Qt6\n• PyQt-Fluent-Widgets - Bibliothèque de composants Fluent Design\n• Cai-install-Web-GUI - Auteur du projet original\n• httpx - Client HTTP asynchrone\n\nSources de manifestes:\n• SWA V2\n• Cysaw\n• Furcate\n• Walftech\n• steamdatabase\n• SteamAutoCracks\n• Sudama\n• Bibliothèque d'aide de manifeste\n\nMerci à tous les développeurs et utilisateurs qui ont contribué à ce projet!",
         "donate": "Faire un don",
         "donate_title": "Soutenir le développeur",
@@ -531,6 +553,8 @@ TEXTS = {
         "st_settings_hint": "Contrôler le mode de gestion des versions des fichiers SteamTools",
         "st_fixed_enable": "Activer le mode version fixe SteamTools",
         "st_fixed_tooltip": "Les nouveaux fichiers SteamTools utiliseront le mode version fixe par défaut",
+        "dlc_timeout": "Délai réseau DLC",
+        "dlc_timeout_hint": "Délai d'attente pour récupérer la liste DLC, augmenter si le réseau est lent (secondes)",
         "name_not_found": "Nom introuvable",
         "fetch_failed": "Échec de récupération",
     },
@@ -662,7 +686,7 @@ TEXTS = {
         "reset_to_default": "Сбросить по умолчанию",
         "about_title": "О программе",
         "thanks_title": "Благодарности",
-        "about_text": "Cai Install - Версия Fluent Design\n\nВерсия: 1.3\n\nЭто современный инструмент разблокировки игр Steam на основе PyQt6-Fluent-Widgets.\n\nФункции:\n• Стиль Fluent Design\n• Поддержка нескольких источников манифестов\n• Поиск и добавление игр\n• Управление установленными играми\n• Настройка темы\n\nURL проекта: https://github.com/zhouchentao666/Cai-install-Fluent-GUI",
+        "about_text": "Cai Install - Версия Fluent Design\n\nВерсия: 1.5\n\nЭто современный инструмент разблокировки игр Steam на основе PyQt6-Fluent-Widgets.\n\nФункции:\n• Стиль Fluent Design\n• Поддержка нескольких источников манифестов\n• Поиск и добавление игр\n• Управление установленными играми\n• Настройка темы\n\nURL проекта: https://github.com/zhouchentao666/Cai-install-Fluent-GUI",
         "thanks_text": "Особая благодарность\n\nРазработчики:\n• zhouchentao666 - Разработчик\n\nПроекты с открытым исходным кодом:\n• PyQt6 - Привязки Python Qt6\n• PyQt-Fluent-Widgets - Библиотека компонентов Fluent Design\n• Cai-install-Web-GUI - Автор оригинального проекта\n• httpx - Асинхронный HTTP клиент\n\nИсточники манифестов:\n• SWA V2\n• Cysaw\n• Furcate\n• Walftech\n• steamdatabase\n• SteamAutoCracks\n• Sudama\n• Библиотека помощи манифеста\n\nСпасибо всем разработчикам и пользователям, внесшим вклад в этот проект!",
         "donate": "Пожертвовать",
         "donate_title": "Поддержать разработчика",
@@ -678,6 +702,8 @@ TEXTS = {
         "st_settings_hint": "Управление режимом версий файлов SteamTools",
         "st_fixed_enable": "Включить режим фиксированной версии SteamTools",
         "st_fixed_tooltip": "Новые файлы SteamTools будут использовать режим фиксированной версии по умолчанию",
+        "dlc_timeout": "Тайм-аут сети DLC",
+        "dlc_timeout_hint": "Тайм-аут получения списка DLC, увеличьте при медленной сети (секунды)",
         "name_not_found": "Имя не найдено",
         "fetch_failed": "Ошибка получения",
     },
@@ -809,7 +835,7 @@ TEXTS = {
         "reset_to_default": "Auf Standard zurücksetzen",
         "about_title": "Über",
         "thanks_title": "Danksagungen",
-        "about_text": "Cai Install - Fluent Design Version\n\nVersion: \n1.3\nDies ist ein modernes Steam-Spiel-Unlocking-Tool basierend auf PyQt6-Fluent-Widgets.\n\nFunktionen:\n• Fluent Design Stil\n• Unterstützung für mehrere Manifest-Quellen\n• Spielsuche und -hinzufügen\n• Verwaltung installierter Spiele\n• Themen-Anpassung\n\nProjekt-URL: https://github.com/zhouchentao666/Cai-install-Fluent-GUI",
+        "about_text": "Cai Install - Fluent Design Version\n\nVersion: \n1.5\nDies ist ein modernes Steam-Spiel-Unlocking-Tool basierend auf PyQt6-Fluent-Widgets.\n\nFunktionen:\n• Fluent Design Stil\n• Unterstützung für mehrere Manifest-Quellen\n• Spielsuche und -hinzufügen\n• Verwaltung installierter Spiele\n• Themen-Anpassung\n\nProjekt-URL: https://github.com/zhouchentao666/Cai-install-Fluent-GUI",
         "thanks_text": "Besondere Danksagung\n\nEntwickler:\n• zhouchentao666 - Entwickler\n\nOpen-Source-Projekte:\n• PyQt6 - Qt6 Python Bindings\n• PyQt-Fluent-Widgets - Fluent Design Komponentenbibliothek\n• Cai-install-Web-GUI - Originalprojekt-Autor\n• httpx - Asynchroner HTTP-Client\n\nManifest-Quellen:\n• SWA V2\n• Cysaw\n• Furcate\n• Walftech\n• steamdatabase\n• SteamAutoCracks\n• Sudama\n• Manifest-Hilfsbibliothek\n\nVielen Dank an alle Entwickler und Benutzer, die zu diesem Projekt beigetragen haben!",
         "donate": "Spenden",
         "donate_title": "Entwickler unterstützen",
@@ -825,6 +851,8 @@ TEXTS = {
         "st_settings_hint": "Versionsverwaltungsmodus für SteamTools-Dateien steuern",
         "st_fixed_enable": "SteamTools Feste Version aktivieren",
         "st_fixed_tooltip": "Neue SteamTools-Dateien verwenden standardmäßig den festen Versionsmodus",
+        "dlc_timeout": "DLC-Netzwerk-Timeout",
+        "dlc_timeout_hint": "Timeout für DLC-Liste, bei langsamen Netzwerk erhöhen (Sekunden)",
         "name_not_found": "Name nicht gefunden",
         "fetch_failed": "Abruf fehlgeschlagen",
     },
@@ -956,7 +984,7 @@ TEXTS = {
         "reset_to_default": "デフォルトにリセット",
         "about_title": "について",
         "thanks_title": "謝辞",
-        "about_text": "Cai Install - Fluent Design バージョン\n\nバージョン: 1.3\n\nこれはPyQt6-Fluent-WidgetsをベースにしたモダンなSteamゲームアンロックツールです。\n\n機能:\n• Fluent Designスタイル\n• 複数のマニフェストソースをサポート\n• ゲーム検索と追加\n• インストール済みゲームの管理\n• テーマカスタマイズ\n\nプロジェクトURL: https://github.com/zhouchentao666/Cai-install-Fluent-GUI",
+        "about_text": "Cai Install - Fluent Design バージョン\n\nバージョン: 1.5\n\nこれはPyQt6-Fluent-WidgetsをベースにしたモダンなSteamゲームアンロックツールです。\n\n機能:\n• Fluent Designスタイル\n• 複数のマニフェストソースをサポート\n• ゲーム検索と追加\n• インストール済みゲームの管理\n• テーマカスタマイズ\n\nプロジェクトURL: https://github.com/zhouchentao666/Cai-install-Fluent-GUI",
         "thanks_text": "特別な感謝\n\n開発者:\n• zhouchentao666 - 開発者\n\nオープンソースプロジェクト:\n• PyQt6 - Qt6 Pythonバインディング\n• PyQt-Fluent-Widgets - Fluent Designコンポーネントライブラリ\n• Cai-install-Web-GUI - オリジナルプロジェクト作成者\n• httpx - 非同期HTTPクライアント\n\nマニフェストソース:\n• SWA V2\n• Cysaw\n• Furcate\n• Walftech\n• steamdatabase\n• SteamAutoCracks\n• Sudama\n• マニフェストヘルパーライブラリ\n\nこのプロジェクトに貢献してくれたすべての開発者とユーザーの皆様に感謝します！",
         "donate": "寄付",
         "donate_title": "開発者を支援",
@@ -972,6 +1000,8 @@ TEXTS = {
         "st_settings_hint": "SteamToolsファイルのバージョン管理モードを制御",
         "st_fixed_enable": "SteamTools固定バージョンモードを有効にする",
         "st_fixed_tooltip": "新しいSteamToolsファイルはデフォルトで固定バージョンモードを使用します",
+        "dlc_timeout": "DLC ネットワークタイムアウト",
+        "dlc_timeout_hint": "DLCリスト取得のタイムアウト、ネットワークが遅い場合は増やしてください（秒）",
         "name_not_found": "名前が見つかりません",
         "fetch_failed": "取得失敗",
     },
@@ -1112,7 +1142,7 @@ TEXTS = {
         "reset_to_default": "重設為預設",
         "about_title": "關於",
         "thanks_title": "感謝",
-        "about_text": "Cai Install - Fluent Design 版本\n\n版本: 1.3\n\n這是一套基於 PyQt6-Fluent-Widgets 的現代化 Steam 遊戲解鎖工具。\n\n功能特色:\n• Fluent Design 設計風格\n• 支援多種清單來源\n• 遊戲搜尋與入库\n• 已入库遊戲管理\n• 佈景主題自訂\n\n專案位址: https://github.com/zhouchentao666/Cai-install-Fluent-GUI",
+        "about_text": "Cai Install - Fluent Design 版本\n\n版本: 1.5\n\n這是一套基於 PyQt6-Fluent-Widgets 的現代化 Steam 遊戲解鎖工具。\n\n功能特色:\n• Fluent Design 設計風格\n• 支援多種清單來源\n• 遊戲搜尋與入库\n• 已入库遊戲管理\n• 佈景主題自訂\n\n專案位址: https://github.com/zhouchentao666/Cai-install-Fluent-GUI",
         "thanks_text": "特別感謝\n\n開發者:\n• zhouchentao666 - 製作人員\n\n開源專案:\n• PyQt6 - Qt6 Python 綁定\n• PyQt-Fluent-Widgets - Fluent Design 元件庫\n• Cai-install-Web-GUI - 原始專案作者\n• httpx - 非同步 HTTP 用戶端\n\n清單來源提供:\n• SWA V2\n• Cysaw\n• Furcate\n• Walftech\n• steamdatabase\n• SteamAutoCracks\n• Sudama\n• 清單不求人\n\n感謝所有為本專案貢獻的開發者與使用者！",
         "donate": "捐贈",
         "donate_title": "支持開發者",
@@ -1128,10 +1158,92 @@ TEXTS = {
         "st_settings_hint": "控制SteamTools檔案的版本管理模式",
         "st_fixed_enable": "啟用 SteamTools 固定版本模式",
         "st_fixed_tooltip": "新增的SteamTools檔案預設使用固定版本模式",
+        "dlc_timeout": "DLC 聯網超時時間",
+        "dlc_timeout_hint": "獲取DLC列表超時時間，網路較差時可適當調大（秒）",
         "name_not_found": "名稱未找到",
         "fetch_failed": "獲取失敗",
     },
 }
+
+# ===== 联机游戏翻译键 (追加到各语言) =====
+_LAUNCHER_TEXTS = {
+    "zh_CN": {
+        "launcher": "联机游戏",
+        "launcher_title": "联机启动器",
+        "launcher_status_ready": "系统就绪",
+        "launcher_status_running": "服务运行中",
+        "launcher_game_exe": "游戏程序",
+        "launcher_browse": "浏览",
+        "launcher_app_id": "协议 ID (AppID)",
+        "launcher_app_id_hint": "默认 480 (Spacewar)，可改为游戏实际 AppID",
+        "launcher_start": "启动服务 & 运行游戏",
+        "launcher_stop": "停止服务",
+        "launcher_log": "运行日志",
+        "launcher_clear_log": "清空日志",
+        "launcher_method_a": "方法A: 设为 3170150 (中文环境推荐)",
+        "launcher_method_b": "方法B: 强改 480 中文版 (杀进程)",
+        "launcher_method_c": "方法C: BAT 脚本注入启动",
+        "launcher_find_patch": "寻找联机补丁 (外部网站)",
+        "launcher_no_exe": "请先选择游戏 .exe 文件",
+        "launcher_service_started": "服务已启动",
+        "launcher_service_stopped": "服务已停止",
+        "launcher_cn_fix_done": "协议 ID 已设为 3170150",
+        "launcher_bat_done": "BAT 脚本已生成并启动",
+        "launcher_error": "启动失败",
+        "launcher_install_hint": "安装 Spacewar (AppID 480)",
+        # 两种联机模式
+        "launcher_mode_label": "联机方式",
+        "launcher_mode_dll": "DLL 注入联机 (推荐)",
+        "launcher_mode_bat": "BAT 脚本注入联机",
+        "launcher_mode_dll_desc": "扫描 Steam 库中的 steam_api.dll，加载后初始化 Steam API，再启动游戏。兼容性最佳。",
+        "launcher_mode_bat_desc": "在游戏目录生成 BAT 脚本，通过环境变量注入 AppID 启动游戏。简单快速。",
+        "launcher_bat_start": "生成脚本并启动",
+        "launcher_mode_select": "选择联机方式",
+        "settings_log_title": "运行日志",
+        "settings_clear_log": "清空日志",
+    },
+    "en_US": {
+        "launcher": "Multiplayer",
+        "launcher_title": "Multiplayer Launcher",
+        "launcher_status_ready": "System Ready",
+        "launcher_status_running": "Service Running",
+        "launcher_game_exe": "Game Executable",
+        "launcher_browse": "Browse",
+        "launcher_app_id": "Protocol ID (AppID)",
+        "launcher_app_id_hint": "Default 480 (Spacewar), can be changed to actual game AppID",
+        "launcher_start": "Start Service & Launch Game",
+        "launcher_stop": "Stop Service",
+        "launcher_log": "Runtime Log",
+        "launcher_clear_log": "Clear Log",
+        "launcher_method_a": "Method A: Set to 3170150 (CN env recommended)",
+        "launcher_method_b": "Method B: Force 480 CN version (kill process)",
+        "launcher_method_c": "Method C: BAT script injection launch",
+        "launcher_find_patch": "Find Multiplayer Patch (External Sites)",
+        "launcher_no_exe": "Please select a game .exe file first",
+        "launcher_service_started": "Service started",
+        "launcher_service_stopped": "Service stopped",
+        "launcher_cn_fix_done": "Protocol ID set to 3170150",
+        "launcher_bat_done": "BAT script generated and launched",
+        "launcher_error": "Launch failed",
+        "launcher_install_hint": "Install Spacewar (AppID 480)",
+        "launcher_mode_label": "Launch Mode",
+        "launcher_mode_dll": "DLL Injection (Recommended)",
+        "launcher_mode_bat": "BAT Script Injection",
+        "launcher_mode_dll_desc": "Scans Steam library for steam_api.dll, loads it to initialize Steam API, then launches the game. Best compatibility.",
+        "launcher_mode_bat_desc": "Generates a BAT script in the game directory to inject AppID via environment variables. Simple and fast.",
+        "launcher_bat_start": "Generate Script & Launch",
+        "launcher_mode_select": "Select Launch Mode",
+        "settings_log_title": "Runtime Log",
+        "settings_clear_log": "Clear Log",
+    },
+}
+for _lang, _keys in _LAUNCHER_TEXTS.items():
+    if _lang in TEXTS:
+        TEXTS[_lang].update(_keys)
+# fallback: copy zh_CN keys to other languages that don't have them
+for _lang in TEXTS:
+    if _lang not in _LAUNCHER_TEXTS:
+        TEXTS[_lang].update(_LAUNCHER_TEXTS["zh_CN"])
 
 # 全局语言变量
 current_language = "zh_CN"
@@ -1455,6 +1567,225 @@ class GameCardGrid(CardWidget):
             else:
                 self.modeLabel.setText(tr("auto_update"))
                 self.modeLabel.setTextColor("#6ee7b7", "#6ee7b7")
+
+
+# ===== 联机核心服务 (移植自 Cai-Install-Reborn) =====
+import ctypes
+import tempfile
+import threading
+import subprocess
+import shutil
+import re as _re
+
+class SystemCoreService:
+    """DLL 扫描注入联机服务"""
+
+    def __init__(self, logger_func, custom_path=None):
+        self.logger = logger_func
+        self.custom_path = str(custom_path) if custom_path else None
+        self.is_64bit = sys.maxsize > 2**32
+        self.target_component = "steam_api64.dll" if self.is_64bit else "steam_api.dll"
+        self.arch_code = "x64" if self.is_64bit else "x86"
+        self.core_lib = None
+        self.is_active = False
+        self.cache_dir = None
+        self.app_proc = None
+
+    def _get_platform_path(self):
+        if self.custom_path and os.path.exists(self.custom_path):
+            return self.custom_path.replace("/", "\\")
+        try:
+            import winreg
+            key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Valve\Steam")
+            path, _ = winreg.QueryValueEx(key, "SteamPath")
+            return path.replace("/", "\\")
+        except Exception:
+            return None
+
+    def _get_library_paths(self, base_steam_path):
+        library_paths = set()
+        if base_steam_path and os.path.exists(base_steam_path):
+            library_paths.add(base_steam_path)
+        vdf_candidates = [
+            os.path.join(base_steam_path, "config", "libraryfolders.vdf"),
+            os.path.join(base_steam_path, "steamapps", "libraryfolders.vdf"),
+        ]
+        for vdf in vdf_candidates:
+            if os.path.exists(vdf):
+                try:
+                    with open(vdf, "r", encoding="utf-8", errors="ignore") as f:
+                        content = f.read()
+                    for path_str in _re.findall(r'"path"\s+"(.+?)"', content, _re.IGNORECASE):
+                        real_path = path_str.replace("\\\\", "\\")
+                        if os.path.exists(real_path):
+                            library_paths.add(real_path)
+                except Exception:
+                    pass
+                break
+        return list(library_paths)
+
+    def _scan_system_components(self):
+        main_path = self._get_platform_path()
+        if not main_path:
+            self.logger("❌ 未检测到 Steam 安装路径")
+            return
+        all_libraries = self._get_library_paths(main_path)
+        self.logger(f"-> 检测到 {len(all_libraries)} 个 Steam 库目录")
+
+        def is_valid_dll(dll_path):
+            try:
+                try:
+                    lib = ctypes.CDLL(dll_path, winmode=0)
+                except TypeError:
+                    lib = ctypes.CDLL(dll_path)
+                return hasattr(lib, "SteamAPI_Init") or bool(getattr(lib, "SteamAPI_Init", None))
+            except Exception:
+                return False
+
+        yielded = 0
+        # 策略1: 优先 Spacewar
+        for lib_root in all_libraries:
+            spacewar = os.path.join(lib_root, "steamapps", "common", "Spacewar")
+            if os.path.exists(spacewar):
+                for root, _, files in os.walk(spacewar):
+                    if self.target_component in files:
+                        found = os.path.join(root, self.target_component)
+                        if is_valid_dll(found):
+                            self.logger("-> [策略1] 找到 Spacewar DLL，校验通过")
+                            yield found
+                            yielded += 1
+        # 策略2: 全库扫描
+        for lib_root in all_libraries:
+            search_root = os.path.join(lib_root, "steamapps", "common")
+            if not os.path.exists(search_root):
+                continue
+            try:
+                for root, dirs, files in os.walk(search_root):
+                    depth = root[len(search_root):].count(os.sep)
+                    if depth > 2:
+                        del dirs[:]
+                        continue
+                    if self.target_component in files:
+                        lower_root = root.lower()
+                        if any(x in lower_root for x in ["crack", "fix", "emu", "goldberg", "smartsteam"]):
+                            continue
+                        found = os.path.join(root, self.target_component)
+                        if is_valid_dll(found):
+                            self.logger(f"-> [策略2] 找到备用 DLL: {os.path.basename(root)}")
+                            yield found
+                            yielded += 1
+                            if yielded >= 15:
+                                return
+            except Exception:
+                pass
+
+    def start_service(self, target_exe, app_id, on_finish_callback):
+        self.is_active = True
+
+        def _service_thread():
+            dll_cookies = []
+            original_cwd = os.getcwd()
+            success = False
+            try:
+                self.logger(f"-> 配置协议 ID: {app_id}")
+                for comp_path in self._scan_system_components():
+                    self.logger(f"-> 尝试组件: {comp_path}")
+                    self.cache_dir = tempfile.mkdtemp(prefix="SysCache_")
+                    dest_path = os.path.join(self.cache_dir, os.path.basename(comp_path))
+                    try:
+                        shutil.copy2(comp_path, dest_path)
+                        with open(os.path.join(self.cache_dir, "steam_appid.txt"), "w") as f:
+                            f.write(str(app_id))
+                    except Exception as e:
+                        self.logger(f"   ❌ 缓存写入失败: {e}")
+                        continue
+                    os.chdir(self.cache_dir)
+                    try:
+                        if hasattr(os, "add_dll_directory"):
+                            try:
+                                dll_cookies.append(os.add_dll_directory(self.cache_dir))
+                                dll_cookies.append(os.add_dll_directory(os.path.dirname(comp_path)))
+                            except Exception:
+                                pass
+                        try:
+                            self.core_lib = ctypes.CDLL(dest_path, winmode=0)
+                        except TypeError:
+                            self.core_lib = ctypes.CDLL(dest_path)
+                        if not self.core_lib.SteamAPI_Init():
+                            self.logger("   ❌ Steam API 初始化失败，尝试下一个...")
+                            try:
+                                import _ctypes
+                                _ctypes.FreeLibrary(self.core_lib._handle)
+                            except Exception:
+                                pass
+                            self.core_lib = None
+                            os.chdir(original_cwd)
+                            continue
+                        self.logger("✅ Steam API 连接成功")
+                        success = True
+                        break
+                    except OSError as e:
+                        self.logger(f"   ❌ DLL 加载失败: {e}")
+                        os.chdir(original_cwd)
+                        continue
+                os.chdir(original_cwd)
+                if not success:
+                    self.logger("❌ 所有 DLL 均无法连接 Steam，请确认 Steam 已登录")
+                    on_finish_callback()
+                    return
+                if target_exe and os.path.exists(target_exe):
+                    self.logger(f"-> 启动游戏: {os.path.basename(target_exe)}")
+                    try:
+                        self.app_proc = subprocess.Popen(
+                            [target_exe], cwd=os.path.dirname(target_exe), shell=True
+                        )
+                        self.logger(f"-> 游戏运行中 (PID: {self.app_proc.pid})")
+                    except Exception as e:
+                        self.logger(f"❌ 启动游戏失败: {e}")
+                self.logger("-> ⏳ 服务运行中，关闭游戏后自动停止...")
+                import time
+                while self.is_active:
+                    if self.app_proc and self.app_proc.poll() is not None:
+                        self.logger("-> 游戏已关闭")
+                        break
+                    time.sleep(1)
+            except Exception as e:
+                self.logger(f"系统错误: {e}")
+            finally:
+                os.chdir(original_cwd)
+                for cookie in dll_cookies:
+                    try:
+                        cookie.close()
+                    except Exception:
+                        pass
+                self.stop_routine()
+                on_finish_callback()
+
+        threading.Thread(target=_service_thread, daemon=True).start()
+
+    def stop_routine(self):
+        self.is_active = False
+        if self.app_proc:
+            try:
+                if self.app_proc.poll() is None:
+                    subprocess.call(
+                        ["taskkill", "/F", "/T", "/PID", str(self.app_proc.pid)],
+                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                    )
+            except Exception:
+                pass
+            self.app_proc = None
+        if self.core_lib:
+            try:
+                self.core_lib.SteamAPI_Shutdown()
+            except Exception:
+                pass
+            self.core_lib = None
+        if self.cache_dir and os.path.exists(self.cache_dir):
+            shutil.rmtree(self.cache_dir, ignore_errors=True)
+
+    def stop(self):
+        self.is_active = False
 
 
 class AsyncWorker(QThread):
@@ -2293,16 +2624,18 @@ class SearchPage(ScrollArea):
         self.manifest_source_label = QLabel(tr("manifest_source"), self)
         self.manifest_source_combo = ComboBox(self)
         self.manifest_source_combo.addItems([
-            "DLCSteamAutoCracks V2",
-            "SWA V2 (printedwaste)", 
+            "自动选择",
+            "SteamAutoCracks V2",
+            "SteamAutoCracks V1",
+            "SWA V2 (printedwaste)",
             "Cysaw",
-            "Furcate", 
+            "Furcate",
             "Walftech",
             "SteamDatabase",
             "Sudama",
             "清单不求人"
         ])
-        self.manifest_source_combo.setCurrentIndex(0)  # 默认选择 SteamAutoCracks V2
+        self.manifest_source_combo.setCurrentIndex(0)  # 默认自动选择
         self.manifest_source_combo.setFixedWidth(200)
         self.manifest_source_combo.currentIndexChanged.connect(self.on_manifest_source_changed)
         options_layout.addWidget(self.manifest_source_label)
@@ -2509,16 +2842,18 @@ class SearchPage(ScrollArea):
             
             # 保存清单源选择
             source_mapping = {
-                0: "steamautocracks_v2",
-                1: "printedwaste", 
-                2: "cysaw",
-                3: "furcate",
-                4: "walftech",
-                5: "steamdatabase",
-                6: "sudama",
-                7: "buqiuren"
+                0: "auto",
+                1: "steamautocracks_v2",
+                2: "steamautocracks_v1",
+                3: "printedwaste",
+                4: "cysaw",
+                5: "furcate",
+                6: "walftech",
+                7: "steamdatabase",
+                8: "sudama",
+                9: "buqiuren"
             }
-            config["default_manifest_source"] = source_mapping.get(self.manifest_source_combo.currentIndex(), "steamautocracks_v2")
+            config["default_manifest_source"] = source_mapping.get(self.manifest_source_combo.currentIndex(), "auto")
             
             # 保存配置
             with open(config_path, 'w', encoding='utf-8') as f:
@@ -2566,14 +2901,16 @@ class SearchPage(ScrollArea):
                 
                 # 映射到combo索引
                 source_mapping = {
-                    "steamautocracks_v2": 0,
-                    "printedwaste": 1, 
-                    "cysaw": 2,
-                    "furcate": 3,
-                    "walftech": 4,
-                    "steamdatabase": 5,
-                    "sudama": 6,
-                    "buqiuren": 7
+                    "auto": 0,
+                    "steamautocracks_v2": 1,
+                    "steamautocracks_v1": 2,
+                    "printedwaste": 3,
+                    "cysaw": 4,
+                    "furcate": 5,
+                    "walftech": 6,
+                    "steamdatabase": 7,
+                    "sudama": 8,
+                    "buqiuren": 9
                 }
                 
                 index = source_mapping.get(saved_source, 0)
@@ -2687,7 +3024,6 @@ class SearchPage(ScrollArea):
         """搜索游戏"""
         query = self.search_input.text().strip()
         if not query:
-            # 清空结果
             for card in self.result_cards:
                 card.deleteLater()
             self.result_cards.clear()
@@ -2698,24 +3034,25 @@ class SearchPage(ScrollArea):
             card.deleteLater()
         self.result_cards.clear()
         
-        # 显示进度（简化版本，无进度环）
-        # 这里可以添加简单的加载提示
+        # 搜索中提示
+        InfoBar.info(
+            title=tr("tip"),
+            content=tr("loading"),
+            parent=self,
+            position=InfoBarPosition.TOP,
+            duration=1500
+        )
         
         async def _search():
             async with CaiBackend() as backend:
                 await backend.initialize()
-                
-                # 尝试提取 AppID
                 appid = backend.extract_app_id(query)
                 if appid:
-                    # 直接是 AppID
                     return {'type': 'appid', 'appid': appid}
                 else:
-                    # 搜索游戏名称
                     results = await backend.find_appid_by_name(query, get_steam_lang(current_language))
                     return {'type': 'search', 'results': results}
         
-        # 确保之前的搜索worker已清理
         if hasattr(self, 'search_worker') and self.search_worker:
             try:
                 if self.search_worker.isRunning():
@@ -2749,22 +3086,26 @@ class SearchPage(ScrollArea):
             # 直接是 AppID，自动开始入库
             self.unlock_game_direct(result['appid'], None)
         else:
-            # 搜索结果
             results = result['results']
             if not results:
                 InfoBar.warning(
                     title=tr("game_not_found"),
-                    content=tr("game_not_found"),
+                    content=tr("check_game_name"),
                     parent=self,
                     position=InfoBarPosition.TOP
                 )
                 return
             
-            # 存储搜索结果
             self.search_results = results
-            
-            # 显示搜索结果
             self.display_search_results(results)
+            
+            InfoBar.success(
+                title=tr("recognition_success"),
+                content=tr("tip_source_fail") if len(results) > 1 else results[0]['name'],
+                parent=self,
+                position=InfoBarPosition.TOP,
+                duration=2500
+            )
     
     def display_search_results(self, results):
         """显示搜索结果"""
@@ -2926,9 +3267,11 @@ class SearchPage(ScrollArea):
         
         # 获取用户选择的清单源
         source_mapping = {
+            "自动选择": "auto",
             "SteamAutoCracks V2": "steamautocracks_v2",
+            "SteamAutoCracks V1": "steamautocracks_v1",
             "SWA V2 (printedwaste)": "printedwaste",
-            "Cysaw": "cysaw", 
+            "Cysaw": "cysaw",
             "Furcate": "furcate",
             "Walftech": "walftech",
             "SteamDatabase": "steamdatabase",
@@ -2936,7 +3279,7 @@ class SearchPage(ScrollArea):
             "清单不求人": "buqiuren"
         }
         selected_source = self.manifest_source_combo.currentText()
-        tool_type = source_mapping.get(selected_source, "steamautocracks_v2")
+        tool_type = source_mapping.get(selected_source, "auto")
         
         # 显示入库提示
         display_name = game_name or f"AppID {appid}"
@@ -2956,20 +3299,49 @@ class SearchPage(ScrollArea):
                 
                 await backend.checkcn()
                 
-                # 使用用户选择的清单源
+                # 读取固定版本配置：ST_Fixed_Version=True 时 use_st_auto_update=False
+                use_st_auto_update = not backend.config.get("ST_Fixed_Version", False)
+                
                 tool_type_actual = tool_type
                 
-                # 判断是 ZIP 源还是 GitHub 源
-                zip_sources = ["printedwaste", "cysaw", "furcate", "walftech", "steamdatabase", "steamautocracks_v2", "sudama", "buqiuren"]
+                # 自动选择模式：依次尝试所有ZIP源
+                if tool_type_actual == "auto":
+                    auto_sources = [
+                        "steamautocracks_v2",
+                        "steamautocracks_v1",
+                        "printedwaste",
+                        "cysaw",
+                        "furcate",
+                        "walftech",
+                        "steamdatabase",
+                        "sudama",
+                        "buqiuren",
+                    ]
+                    for src in auto_sources:
+                        backend.log.info(f"[自动选择] 正在尝试源: {src}")
+                        try:
+                            ok = await backend.process_zip_source(
+                                appid, src, unlocker_type,
+                                use_st_auto_update, add_all_dlc, patch_depot_key
+                            )
+                            if ok:
+                                backend.log.info(f"[自动选择] 源 {src} 成功")
+                                return True
+                        except Exception as e:
+                            backend.log.warning(f"[自动选择] 源 {src} 失败: {e}")
+                    return False
+                
+                # 指定源模式
+                zip_sources = ["printedwaste", "cysaw", "furcate", "walftech", "steamdatabase", "steamautocracks_v2", "steamautocracks_v1", "sudama", "buqiuren"]
                 if tool_type_actual in zip_sources:
                     success = await backend.process_zip_source(
                         appid, tool_type_actual, unlocker_type,
-                        False, add_all_dlc, patch_depot_key
+                        use_st_auto_update, add_all_dlc, patch_depot_key
                     )
                 else:
                     success = await backend.process_github_manifest(
                         appid, tool_type_actual, unlocker_type,
-                        False, add_all_dlc, patch_depot_key
+                        use_st_auto_update, add_all_dlc, patch_depot_key
                     )
                 
                 return success
@@ -2988,38 +3360,37 @@ class SearchPage(ScrollArea):
     @pyqtSlot(object)
     def on_unlock_complete(self, success):
         """入库完成"""
-        # 清理解锁worker引用
         if hasattr(self, 'unlock_worker') and self.unlock_worker:
             self.unlock_worker.deleteLater()
             self.unlock_worker = None
+        
+        # 始终显示在主窗口，不受当前页面限制
+        bar_parent = self.window()
         
         if success:
             InfoBar.success(
                 title=tr("add_success"),
                 content=tr("add_success_content").format(self.current_appid if hasattr(self, 'current_appid') else '游戏'),
-                parent=self,
+                parent=bar_parent,
                 position=InfoBarPosition.TOP,
                 duration=3000
             )
-            # 通知主页刷新游戏列表
             self.notify_home_refresh()
         else:
             InfoBar.error(
                 title=tr("delete_failed"),
                 content=tr("process_failed") + "，" + tr("check_logs"),
-                parent=self,
+                parent=bar_parent,
                 position=InfoBarPosition.TOP
             )
     
     @pyqtSlot(str)
     def on_unlock_error(self, error):
         """入库失败"""
-        # 清理解锁worker引用
         if hasattr(self, 'unlock_worker') and self.unlock_worker:
             self.unlock_worker.deleteLater()
             self.unlock_worker = None
         
-        # 友好的错误提示
         if "Server disconnected" in error or "RemoteProtocolError" in error:
             error_msg = "网络连接失败，服务器断开连接\n\n可能的原因：\n1. 清单源服务器不稳定\n2. 网络连接问题\n\n建议：\n- 尝试切换其他清单源\n- 检查网络连接\n- 稍后重试"
         elif "404" in error or "not found" in error.lower():
@@ -3037,7 +3408,7 @@ class SearchPage(ScrollArea):
         InfoBar.error(
             title=tr("delete_failed"),
             content=tr("check_details"),
-            parent=self,
+            parent=self.window(),
             position=InfoBarPosition.TOP,
             duration=5000
         )
@@ -3063,6 +3434,303 @@ class SettinsCard(GroupHeaderCardWidget):
         # 添加组件到分组中
         self.addGroup(FluentIcon.FOLDER, tr("steam_path"), tr("steam_path_hint"), self.steam_path_edit)
         self.addGroup(FluentIcon.GITHUB, tr("github_token"), tr("github_token_hint"), self.token_edit)
+
+
+# ===== 联机游戏页面 =====
+class LauncherLogWorker(QThread):
+    """联机日志轮询线程"""
+    log_received = pyqtSignal(str)
+    service_stopped = pyqtSignal()
+
+    def __init__(self, service: SystemCoreService):
+        super().__init__()
+        self._service = service
+        self._running = True
+
+    def run(self):
+        import time
+        while self._running and self._service.is_active:
+            time.sleep(0.5)
+        if self._running:
+            self.service_stopped.emit()
+
+    def stop(self):
+        self._running = False
+
+
+class LauncherPage(ScrollArea):
+    """联机游戏页面 - 支持 DLL 注入 / BAT 脚本两种方式"""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setObjectName("launcherPage")
+        self.setWidgetResizable(True)
+
+        self._service: Optional[SystemCoreService] = None
+        self._log_worker: Optional[LauncherLogWorker] = None
+        self._running = False
+        self._log_lines = []
+
+        container = QWidget()
+        container.setObjectName("launcherContainer")
+        self.setWidget(container)
+
+        self.mainLayout = QVBoxLayout(container)
+        self.mainLayout.setContentsMargins(30, 30, 30, 30)
+        self.mainLayout.setSpacing(16)
+
+        # 标题行
+        header = QHBoxLayout()
+        self.title_label = SubtitleLabel(tr("launcher_title"), self)
+        self.status_label = CaptionLabel(tr("launcher_status_ready"), self)
+        self.status_label.setTextColor("#10b981", "#10b981")
+        header.addWidget(self.title_label)
+        header.addStretch(1)
+        header.addWidget(self.status_label)
+        self.mainLayout.addLayout(header)
+
+        # ── 模式选择卡片 ──
+        mode_card = CardWidget(self)
+        mode_layout = QVBoxLayout(mode_card)
+        mode_layout.setContentsMargins(20, 16, 20, 16)
+        mode_layout.setSpacing(10)
+        mode_layout.addWidget(BodyLabel(tr("launcher_mode_select"), mode_card))
+
+        self.mode_dll_btn = PushButton(tr("launcher_mode_dll"), mode_card)
+        self.mode_bat_btn = PushButton(tr("launcher_mode_bat"), mode_card)
+        self.mode_dll_btn.setCheckable(True)
+        self.mode_bat_btn.setCheckable(True)
+        self.mode_dll_btn.setChecked(True)  # 默认 DLL 模式
+        self.mode_dll_btn.clicked.connect(lambda: self._select_mode("dll"))
+        self.mode_bat_btn.clicked.connect(lambda: self._select_mode("bat"))
+
+        mode_btn_row = QHBoxLayout()
+        mode_btn_row.addWidget(self.mode_dll_btn)
+        mode_btn_row.addWidget(self.mode_bat_btn)
+        mode_layout.addLayout(mode_btn_row)
+
+        self.mode_desc_label = CaptionLabel(tr("launcher_mode_dll_desc"), mode_card)
+        self.mode_desc_label.setWordWrap(True)
+        self.mode_desc_label.setTextColor("#606060", "#a0a0a0")
+        mode_layout.addWidget(self.mode_desc_label)
+        self.mainLayout.addWidget(mode_card)
+
+        # ── 游戏路径卡片 ──
+        path_card = CardWidget(self)
+        path_layout = QVBoxLayout(path_card)
+        path_layout.setContentsMargins(20, 16, 20, 16)
+        path_layout.setSpacing(10)
+        path_layout.addWidget(BodyLabel(tr("launcher_game_exe"), path_card))
+
+        path_row = QHBoxLayout()
+        self.exe_input = LineEdit(path_card)
+        self.exe_input.setPlaceholderText("请选择游戏 .exe 文件...")
+        self.exe_input.setReadOnly(True)
+        self.browse_btn = PushButton(tr("launcher_browse"), path_card)
+        self.browse_btn.setIcon(FluentIcon.FOLDER)
+        self.browse_btn.clicked.connect(self._browse_exe)
+        path_row.addWidget(self.exe_input)
+        path_row.addWidget(self.browse_btn)
+        path_layout.addLayout(path_row)
+
+        # AppID 输入
+        appid_row = QHBoxLayout()
+        appid_row.addWidget(CaptionLabel(tr("launcher_app_id") + ":", path_card))
+        self.appid_input = LineEdit(path_card)
+        self.appid_input.setText("480")
+        self.appid_input.setFixedWidth(120)
+        appid_hint = CaptionLabel(tr("launcher_app_id_hint"), path_card)
+        appid_hint.setTextColor("#606060", "#a0a0a0")
+        appid_row.addWidget(self.appid_input)
+        appid_row.addWidget(appid_hint)
+        appid_row.addStretch(1)
+        path_layout.addLayout(appid_row)
+        self.mainLayout.addWidget(path_card)
+
+        # ── 操作按钮 ──
+        self.action_btn = PrimaryPushButton(tr("launcher_start"), self)
+        self.action_btn.setIcon(FluentIcon.PLAY)
+        self.action_btn.setFixedHeight(40)
+        self.action_btn.clicked.connect(self._on_action)
+        self.mainLayout.addWidget(self.action_btn)
+
+        # ── 日志卡片 ──
+        log_card = CardWidget(self)
+        log_layout = QVBoxLayout(log_card)
+        log_layout.setContentsMargins(20, 16, 20, 16)
+        log_layout.setSpacing(8)
+
+        log_header = QHBoxLayout()
+        log_header.addWidget(BodyLabel(tr("launcher_log"), log_card))
+        log_header.addStretch(1)
+        clear_btn = TransparentToolButton(FluentIcon.DELETE, log_card)
+        clear_btn.setToolTip(tr("launcher_clear_log"))
+        clear_btn.clicked.connect(self._clear_log)
+        log_header.addWidget(clear_btn)
+        log_layout.addLayout(log_header)
+
+        from PyQt6.QtWidgets import QTextEdit
+        self.log_view = QTextEdit(log_card)
+        self.log_view.setReadOnly(True)
+        self.log_view.setFixedHeight(220)
+        self.log_view.setStyleSheet(
+            "QTextEdit { background: rgba(0,0,0,0.15); border-radius: 6px; "
+            "font-family: Consolas, monospace; font-size: 12px; padding: 8px; }"
+        )
+        log_layout.addWidget(self.log_view)
+        self.mainLayout.addWidget(log_card)
+        self.mainLayout.addStretch(1)
+
+        self._current_mode = "dll"
+        self._log("系统初始化完成，等待操作...")
+
+    # ── 内部方法 ──
+
+    def _select_mode(self, mode: str):
+        self._current_mode = mode
+        self.mode_dll_btn.setChecked(mode == "dll")
+        self.mode_bat_btn.setChecked(mode == "bat")
+        if mode == "dll":
+            self.mode_desc_label.setText(tr("launcher_mode_dll_desc"))
+            self.action_btn.setText(tr("launcher_start"))
+            self.action_btn.setIcon(FluentIcon.PLAY)
+        else:
+            self.mode_desc_label.setText(tr("launcher_mode_bat_desc"))
+            self.action_btn.setText(tr("launcher_bat_start"))
+            self.action_btn.setIcon(FluentIcon.PLAY)
+
+    def _log(self, msg: str):
+        import time as _time
+        ts = _time.strftime("%H:%M:%S")
+        self._log_lines.append(f"[{ts}] {msg}")
+        self.log_view.append(f"<span style='color:#888'>[{ts}]</span> {msg}")
+        sb = self.log_view.verticalScrollBar()
+        sb.setValue(sb.maximum())
+
+    def _clear_log(self):
+        self._log_lines.clear()
+        self.log_view.clear()
+
+    def _browse_exe(self):
+        from PyQt6.QtWidgets import QFileDialog
+        path, _ = QFileDialog.getOpenFileName(
+            self, "选择游戏程序", "", "可执行文件 (*.exe)"
+        )
+        if path:
+            self.exe_input.setText(path)
+            self._log(f"已选择: {path}")
+
+    def _set_running(self, running: bool):
+        self._running = running
+        self.exe_input.setEnabled(not running)
+        self.appid_input.setEnabled(not running)
+        self.browse_btn.setEnabled(not running)
+        self.mode_dll_btn.setEnabled(not running)
+        self.mode_bat_btn.setEnabled(not running)
+        if running:
+            self.action_btn.setText(tr("launcher_stop"))
+            self.action_btn.setIcon(FluentIcon.CLOSE)
+            self.status_label.setText(tr("launcher_status_running"))
+            self.status_label.setTextColor("#f59e0b", "#f59e0b")
+        else:
+            if self._current_mode == "dll":
+                self.action_btn.setText(tr("launcher_start"))
+            else:
+                self.action_btn.setText(tr("launcher_bat_start"))
+            self.action_btn.setIcon(FluentIcon.PLAY)
+            self.status_label.setText(tr("launcher_status_ready"))
+            self.status_label.setTextColor("#10b981", "#10b981")
+
+    def _on_action(self):
+        if self._running:
+            self._stop_service()
+        elif self._current_mode == "dll":
+            self._start_dll_service()
+        else:
+            self._start_bat_service()
+
+    # ── DLL 注入模式 ──
+
+    def _start_dll_service(self):
+        exe_path = self.exe_input.text().strip()
+        app_id = self.appid_input.text().strip() or "480"
+        if not app_id.isdigit():
+            InfoBar.warning(title="参数错误", content="AppID 必须为数字", parent=self, position=InfoBarPosition.TOP)
+            return
+
+        # 读取 Steam 路径
+        steam_path = None
+        try:
+            config_path = Path.cwd() / "config.json"
+            if config_path.exists():
+                import json as _json
+                with open(config_path, "r", encoding="utf-8") as f:
+                    cfg = _json.load(f)
+                steam_path = cfg.get("Custom_Steam_Path", "").strip() or None
+        except Exception:
+            pass
+
+        self._service = SystemCoreService(self._log, steam_path)
+        self._set_running(True)
+        self._log(f"-> 启动 DLL 注入联机 | AppID: {app_id}")
+
+        def on_finish():
+            # 回到主线程更新 UI
+            from PyQt6.QtCore import QMetaObject, Qt as _Qt
+            QMetaObject.invokeMethod(self, "_on_service_finished", _Qt.ConnectionType.QueuedConnection)
+
+        self._service.start_service(exe_path if exe_path else None, app_id, on_finish)
+
+    @pyqtSlot()
+    def _on_service_finished(self):
+        self._set_running(False)
+        self._log(tr("launcher_service_stopped"))
+
+    def _stop_service(self):
+        if self._service:
+            self._service.stop()
+            self._service.stop_routine()
+            self._service = None
+        self._set_running(False)
+        self._log(tr("launcher_service_stopped"))
+
+    # ── BAT 脚本模式 ──
+
+    def _start_bat_service(self):
+        exe_path = self.exe_input.text().strip()
+        app_id = self.appid_input.text().strip() or "480"
+        if not exe_path or not os.path.exists(exe_path):
+            InfoBar.warning(title="提示", content=tr("launcher_no_exe"), parent=self, position=InfoBarPosition.TOP)
+            return
+        if not app_id.isdigit():
+            InfoBar.warning(title="参数错误", content="AppID 必须为数字", parent=self, position=InfoBarPosition.TOP)
+            return
+
+        try:
+            work_dir = os.path.dirname(exe_path)
+            exe_name = os.path.basename(exe_path)
+            bat_name = "Cai_Inject_Start.bat"
+            bat_path = os.path.join(work_dir, bat_name)
+            bat_content = (
+                f"@echo off\n"
+                f"set SteamAppId={app_id}\n"
+                f"set SteamGameId={app_id}\n"
+                f'start "" "{exe_name}"\n'
+                f"exit\n"
+            )
+            with open(bat_path, "w", encoding="gbk") as f:
+                f.write(bat_content)
+            self._log(f"-> 已生成启动脚本: {bat_name}")
+            subprocess.Popen(
+                ["cmd.exe", "/c", bat_name],
+                cwd=work_dir,
+                creationflags=subprocess.CREATE_NO_WINDOW,
+            )
+            self._log(f"✅ 游戏已通过 BAT 注入启动 (AppID: {app_id})")
+            InfoBar.success(title=tr("launcher_service_started"), content=tr("launcher_bat_done"), parent=self, position=InfoBarPosition.TOP)
+        except Exception as e:
+            self._log(f"❌ BAT 启动失败: {e}")
+            InfoBar.error(title=tr("launcher_error"), content=str(e), parent=self, position=InfoBarPosition.TOP)
 
 
 class SettingsPage(ScrollArea):
@@ -3102,6 +3770,8 @@ class SettingsPage(ScrollArea):
         self.lang_combo = None
         self.effect_combo = None
         self.st_fixed_check = None
+        self.dlc_timeout_spinbox = None
+        self.log_view = None
         
         # 添加其他设置卡片（应用程序配置、外观设置等）
         self._setup_additional_settings(layout)
@@ -3116,6 +3786,11 @@ class SettingsPage(ScrollArea):
         self._config_loaded = False
         self.worker = None
         self._save_timer = None
+
+        # 注册日志 handler，将 backend 日志输出到设置页面
+        self._log_handler = QtLogHandler(self)
+        self._log_handler.log_record.connect(self._append_log)
+        logging.getLogger(' Cai install').addHandler(self._log_handler)
     
     def _setup_additional_settings(self, layout):
         """设置其他设置卡片"""
@@ -3144,6 +3819,14 @@ class SettingsPage(ScrollArea):
         self.st_fixed_check.setToolTip(tr("st_fixed_tooltip"))
         app_config_card.addGroup(FluentIcon.SETTING, tr("st_settings"), tr("st_settings_hint"), self.st_fixed_check)
         
+        # DLC 超时时间
+        self.dlc_timeout_spinbox = SpinBox()
+        self.dlc_timeout_spinbox.setRange(5, 600)
+        self.dlc_timeout_spinbox.setValue(60)
+        self.dlc_timeout_spinbox.setSuffix(" s")
+        self.dlc_timeout_spinbox.setFixedWidth(120)
+        app_config_card.addGroup(FluentIcon.SPEED_HIGH, tr("dlc_timeout"), tr("dlc_timeout_hint"), self.dlc_timeout_spinbox)
+
         # 入库超时时间
         self.timeout_spinbox = SpinBox()
         self.timeout_spinbox.setRange(10, 300)
@@ -3210,7 +3893,33 @@ class SettingsPage(ScrollArea):
         appearance_card.addGroup(FluentIcon.PALETTE, tr("window_effect"), tr("window_effect_hint"), self.effect_combo)
         
         layout.addWidget(appearance_card)
-        
+
+        # 日志显示卡片
+        log_card = CardWidget(self)
+        log_card_layout = QVBoxLayout(log_card)
+        log_card_layout.setContentsMargins(20, 16, 20, 16)
+        log_card_layout.setSpacing(8)
+
+        log_header = QHBoxLayout()
+        log_header.addWidget(BodyLabel(tr("settings_log_title"), log_card))
+        log_header.addStretch(1)
+        clear_log_btn = TransparentToolButton(FluentIcon.DELETE, log_card)
+        clear_log_btn.setToolTip(tr("settings_clear_log"))
+        clear_log_btn.clicked.connect(self._clear_log)
+        log_header.addWidget(clear_log_btn)
+        log_card_layout.addLayout(log_header)
+
+        from PyQt6.QtWidgets import QTextEdit
+        self.log_view = QTextEdit(log_card)
+        self.log_view.setReadOnly(True)
+        self.log_view.setFixedHeight(200)
+        self.log_view.setStyleSheet(
+            "QTextEdit { background: rgba(0,0,0,0.12); border-radius: 6px; "
+            "font-family: Consolas, monospace; font-size: 12px; padding: 8px; }"
+        )
+        log_card_layout.addWidget(self.log_view)
+        layout.addWidget(log_card)
+
         # 按钮行
         button_layout = QHBoxLayout()
         
@@ -3252,7 +3961,25 @@ class SettingsPage(ScrollArea):
         
         button_layout.addStretch(1)
         layout.addLayout(button_layout)
-    
+
+    def _append_log(self, level: str, msg: str):
+        """将日志追加到日志视图"""
+        color_map = {
+            "DEBUG": "#888888",
+            "INFO": "#cccccc",
+            "WARNING": "#f59e0b",
+            "ERROR": "#ef4444",
+            "CRITICAL": "#dc2626",
+        }
+        color = color_map.get(level, "#cccccc")
+        self.log_view.append(f"<span style='color:{color}'>{msg}</span>")
+        sb = self.log_view.verticalScrollBar()
+        sb.setValue(sb.maximum())
+
+    def _clear_log(self):
+        """清空日志视图"""
+        self.log_view.clear()
+
     def showEvent(self, event):
         """页面显示时加载配置"""
         super().showEvent(event)
@@ -3284,6 +4011,10 @@ class SettingsPage(ScrollArea):
         if self.st_fixed_check:
             self.st_fixed_check.stateChanged.connect(self._on_setting_changed)
         
+        # DLC 超时时间
+        if self.dlc_timeout_spinbox:
+            self.dlc_timeout_spinbox.valueChanged.connect(self._on_setting_changed)
+
         # 入库超时时间
         if self.timeout_spinbox:
             self.timeout_spinbox.valueChanged.connect(self._on_setting_changed)
@@ -3436,7 +4167,7 @@ class SettingsPage(ScrollArea):
         """显示关于对话框"""
         about_text = """Cai Install - Fluent Design 版本
 
-版本: 1.3
+版本: 1.5
 
 这是一个基于 PyQt6-Fluent-Widgets 的现代化 Steam 游戏解锁工具。
 
@@ -3604,6 +4335,10 @@ class SettingsPage(ScrollArea):
             if self.st_fixed_check:
                 self.st_fixed_check.setChecked(config.get("ST_Fixed_Version", False))
             
+            # 加载DLC超时时间
+            if self.dlc_timeout_spinbox:
+                self.dlc_timeout_spinbox.setValue(config.get("DLCTimeout", 60))
+
             # 加载入库超时时间
             if self.timeout_spinbox:
                 self.timeout_spinbox.setValue(config.get("download_timeout", 30))
@@ -3734,6 +4469,11 @@ class SettingsPage(ScrollArea):
             if self.st_fixed_check:
                 config["ST_Fixed_Version"] = self.st_fixed_check.isChecked()
             
+            # 保存DLC超时时间
+            if self.dlc_timeout_spinbox:
+                dlc_timeout = self.dlc_timeout_spinbox.value()
+                config["DLCTimeout"] = dlc_timeout if dlc_timeout >= 5 else 60
+
             # 保存入库超时时间
             if self.timeout_spinbox:
                 config["download_timeout"] = self.timeout_spinbox.value()
@@ -3876,6 +4616,7 @@ class MainWindow(MSFluentWindow):
         # 创建页面
         self.home_page = HomePage(self)
         self.search_page = SearchPage(self)
+        self.launcher_page = LauncherPage(self)
         self.settings_page = SettingsPage(self)
         
         # 添加导航项
@@ -3889,6 +4630,12 @@ class MainWindow(MSFluentWindow):
             self.search_page,
             FluentIcon.SEARCH,
             tr("search")
+        )
+
+        self.addSubInterface(
+            self.launcher_page,
+            FluentIcon.GAME,
+            tr("launcher")
         )
         
         # 在导航栏底部添加设置

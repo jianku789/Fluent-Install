@@ -56,6 +56,7 @@ DEFAULT_CONFIG = {
         "github": [],
         "zip": []
     },
+    "DLCTimeout": 60,           # DLC 入库/联网超时时间（秒）
     "ST_Fixed_Version": False,  # SteamTools固定版本模式
     "QA1": "温馨提示: Github_Personal_Token(个人访问令牌)可在Github设置的最底下开发者选项中找到, 详情请看教程。",
     "QA2": "Force_Unlocker: 强制指定解锁工具, 填入 'steamtools' 或 'greenluma'。留空则自动检测。",
@@ -290,7 +291,25 @@ class CaiBackend:
                 
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 403:
-                self.log.warning("GitHub API 请求次数已用尽，跳过更新检查")
+                self.log.warning("GitHub API 受限，启用网页重定向兜底...")
+                try:
+                    html_url = f"https://github.com/{GITHUB_REPO}/releases/latest"
+                    resp = await self.client.get(html_url, follow_redirects=False, timeout=10)
+                    if resp.status_code in (301, 302):
+                        loc = resp.headers.get('Location', '')
+                        if loc:
+                            latest_version = loc.split('/')[-1].lstrip('v')
+                            if self._compare_versions(CURRENT_VERSION, latest_version) < 0:
+                                self.log.info(f"发现新版本（兜底）: {latest_version}")
+                                return True, {
+                                    'current_version': CURRENT_VERSION,
+                                    'latest_version': latest_version,
+                                    'release_name': '', 'release_body': '',
+                                    'release_url': html_url,
+                                    'published_at': '', 'download_urls': []
+                                }
+                except Exception:
+                    pass
             else:
                 self.log.warning(f"检查更新时 HTTP 错误: {e}")
             return False, {}
@@ -948,9 +967,88 @@ class CaiBackend:
         return []
 
     # NEW: Updated depot retrieval function with better error handling
+    async def _get_cached_app_tokens(self) -> Dict[str, str]:
+        cache_file = self.project_root / "app_tokens_cache.json"
+        current_time = time.time()
+        if cache_file.exists():
+            try:
+                async with aiofiles.open(cache_file, 'r', encoding='utf-8') as f:
+                    cache_content = json.loads(await f.read())
+                if current_time - cache_content.get('timestamp', 0) < 86400:
+                    return cache_content.get('data', {})
+            except:
+                pass
+        try:
+            response = await self.client.get("https://api.993499094.xyz/appaccesstokens.json", timeout=30)
+            if response.status_code == 200:
+                data = response.json()
+                async with aiofiles.open(cache_file, 'w', encoding='utf-8') as f:
+                    await f.write(json.dumps({"timestamp": current_time, "data": data}, ensure_ascii=False))
+                return data
+        except Exception:
+            pass
+        return {}
+
+    async def _get_app_info_via_token(self, appid: str, token: str) -> Dict | None:
+        def _fetch_task():
+            try:
+                from steam.client import SteamClient
+                client = SteamClient()
+                if client.anonymous_login() != 1:
+                    return None
+                product_info = client.get_product_info(apps=[{'appid': int(appid), 'access_token': int(token)}])
+                if product_info and 'apps' in product_info and int(appid) in product_info['apps']:
+                    raw_data = product_info['apps'][int(appid)]
+                    return {str(appid): raw_data}
+                return None
+            except Exception:
+                return None
+            finally:
+                if 'client' in locals() and client:
+                    client.disconnect()
+        return await asyncio.to_thread(_fetch_task)
+
+    def _parse_token_app_info(self, appid: str, app_info: Dict) -> Dict:
+        """解析通过 Token 获取的 app_info，返回 {'depots': [...]} 格式"""
+        result = []
+        try:
+            raw = app_info.get(str(appid), {})
+            depots = raw.get("depots", {})
+            for depot_id, depot_info in depots.items():
+                if not isinstance(depot_info, dict):
+                    continue
+                manifests = depot_info.get("manifests", {})
+                manifest_info = manifests.get("public")
+                if not isinstance(manifest_info, dict):
+                    continue
+                manifest_id = manifest_info.get("gid")
+                size = int(manifest_info.get("download", 0))
+                dlc_appid = depot_info.get("dlcappid")
+                source_label = f"DLC:{dlc_appid}" if dlc_appid else "主游戏"
+                if manifest_id:
+                    result.append((depot_id, manifest_id, size, source_label))
+        except Exception:
+            pass
+        return {"depots": result}
+
     async def get_depots_safe(self, appid: str) -> List[Tuple[str, str, int, str]]:
         """安全的Depot获取函数，返回 (depot_id, manifest_id, size, source) 元组列表"""
         self.log.info(f"正在获取 AppID {appid} 的Depot信息...")
+
+        # 0. 优先使用 Token 探测隐藏 Depot
+        try:
+            tokens = await self._get_cached_app_tokens()
+            token = tokens.get(str(appid))
+            if token:
+                self.log.debug(f"找到 AppID {appid} 的 access token，尝试 Token 方式获取 Depot...")
+                app_info = await self._get_app_info_via_token(appid, token)
+                if app_info:
+                    parsed = self._parse_token_app_info(appid, app_info)
+                    if parsed["depots"]:
+                        self.log.info(f"通过 Token 成功获取到 {len(parsed['depots'])} 个Depot（含隐藏）")
+                        return parsed["depots"]
+        except Exception:
+            pass
         
         # 通用解析函数 (适用于 ddxnb 和 steamcmd)
         def parse_steamcmd_style_depots(json_data: dict) -> List[Tuple[str, str, int, str]]:
@@ -1977,68 +2075,35 @@ class CaiBackend:
             return False
     
     async def _patch_lua_with_existing_depotkeys(self, app_id: str, lua_file_path: Path, depotkeys_data: Dict) -> bool:
-        """使用已有的 depotkeys 数据修补 LUA 文件（避免重复下载）"""
-        try:
-            # 如果depotkeys_data为空，直接返回
-            if not depotkeys_data:
-                self.log.warning("depotkeys_data 为空，跳过密钥修补")
+            """搬运自 Reborn：增强型修补逻辑，防止废档"""
+            try:
+                if app_id not in depotkeys_data:
+                    return False
+                depotkey = str(depotkeys_data[app_id]).strip()
+                if not depotkey:  # 防止修补空密钥
+                    return False
+                if not lua_file_path.exists():
+                    return False
+
+                async with self.lock:
+                    async with aiofiles.open(lua_file_path, 'r', encoding='utf-8') as f:
+                        lines = (await f.read()).strip().split('\n')
+
+                    new_lines, replaced = [], False
+                    for line in lines:
+                        if line.strip() == f"addappid({app_id})":
+                            new_lines.append(f'addappid({app_id},1,"{depotkey}")')
+                            replaced = True
+                        else:
+                            new_lines.append(line.strip())
+                    if not replaced:
+                        new_lines.append(f'addappid({app_id},1,"{depotkey}")')
+
+                    async with aiofiles.open(lua_file_path, 'w', encoding='utf-8') as f:
+                        await f.write('\n'.join(new_lines) + '\n')
+                return True
+            except Exception:
                 return False
-                
-            # 检查 app_id 是否在 depotkeys 中
-            if app_id not in depotkeys_data:
-                self.log.warning(f"没有此AppID的depotkey: {app_id}，这是正常情况，可能此APP ID没有创意功放密钥或者暂未收录，不影响本体使用")
-                return False
-            
-            depotkey = depotkeys_data[app_id]
-            
-            # 检查 depotkey 是否有效
-            if not depotkey or not str(depotkey).strip():
-                self.log.warning(f"AppID {app_id} 的 depotkey 为空或无效，跳过修补: '{depotkey}，，这是正常情况，可能此APP ID没有创意功放密钥或者暂未收录，不影响本体使用'")
-                return False
-            
-            depotkey = str(depotkey).strip()
-            self.log.info(f"找到 AppID {app_id} 的有效 depotkey: {depotkey}")
-            
-            # 读取现有 LUA 文件
-            if not lua_file_path.exists():
-                self.log.error(f"LUA文件不存在: {lua_file_path}")
-                return False
-            
-            async with aiofiles.open(lua_file_path, 'r', encoding='utf-8') as f:
-                lua_content = await f.read()
-            
-            # 解析行
-            lines = lua_content.strip().split('\n')
-            new_lines = []
-            app_id_line_removed = False
-            
-            # 移除现有的 addappid({app_id}) 行并添加带 depotkey 的新行
-            for line in lines:
-                line = line.strip()
-                # 检查是否是需要替换的简单 addappid 行
-                if line == f"addappid({app_id})":
-                    # 替换为带 depotkey 的版本
-                    new_lines.append(f'addappid({app_id},1,"{depotkey}")')
-                    app_id_line_removed = True
-                    self.log.info(f"已替换: addappid({app_id}) -> addappid({app_id},1,\"{depotkey}\")")
-                else:
-                    new_lines.append(line)
-            
-            # 如果没有找到简单的 addappid 行，添加 depotkey 版本
-            if not app_id_line_removed:
-                new_lines.append(f'addappid({app_id},1,"{depotkey}")')
-                self.log.info(f"已添加新的 depotkey 条目: addappid({app_id},1,\"{depotkey}\")")
-            
-            # 写回文件
-            async with aiofiles.open(lua_file_path, 'w', encoding='utf-8') as f:
-                await f.write('\n'.join(new_lines) + '\n')
-            
-            self.log.info(f"成功修补 LUA 文件的 depotkey: {lua_file_path.name}")
-            return True
-            
-        except Exception as e:
-            self.log.error(f"修补 LUA depotkey 时出错: {self.stack_error(e)}")
-            return False
 
     async def patch_lua_with_depotkey(self, app_id: str, lua_file_path: Path) -> bool:
         """Patch LUA file with depotkey from SteamAutoCracks repository"""
@@ -2207,15 +2272,40 @@ class CaiBackend:
             self.log.error(f'合并失败: {self.stack_error(e)}')
             return False
 
-    async def _get_from_mirrors(self, sha: str, path: str, repo: str) -> bytes:
-        urls = [f'https://raw.githubusercontent.com/{repo}/{sha}/{path}']
+    def _build_mirror_urls(self, repo: str, sha: str, path: str) -> List[str]:
+        """构建镜像URL列表（国内环境优先使用代理）"""
         if os.environ.get('IS_CN') == 'yes':
-            urls = [f'https://gh-proxy.org/https://github.com/{repo}/{sha}/{path}',f'https://cdn.gh-proxy.org/https://github.com/{repo}/{sha}/{path}',f'https://edgeone.gh-proxy.org/https://github.com/{repo}/{sha}/{path}',f'https://github.chenc.dev/github.com/{repo}/{sha}/{path}',f'https://fastgit.cc/https://github.com/{repo}/{sha}/{path}',f'https://gh.llkk.cc/https://github.com/{repo}/{sha}/{path}',f'https://gh.akass.cn/{repo}/{sha}/{path}',f'https://raw.githubusercontent.com/{repo}/{sha}/{path}']
-        for url in urls:
+            return [
+                f'https://gh-proxy.org/https://github.com/{repo}/{sha}/{path}',
+                f'https://cdn.gh-proxy.org/https://github.com/{repo}/{sha}/{path}',
+                f'https://edgeone.gh-proxy.org/https://github.com/{repo}/{sha}/{path}',
+                f'https://github.chenc.dev/github.com/{repo}/{sha}/{path}',
+                f'https://fastgit.cc/https://github.com/{repo}/{sha}/{path}',
+                f'https://gh.llkk.cc/https://github.com/{repo}/{sha}/{path}',
+                f'https://gh.akass.cn/{repo}/{sha}/{path}',
+                f'https://raw.githubusercontent.com/{repo}/{sha}/{path}',
+            ]
+        return [f'https://raw.githubusercontent.com/{repo}/{sha}/{path}']
+
+    async def _get_from_mirrors(self, sha: str, path: str, repo: str) -> bytes:
+        urls = self._build_mirror_urls(repo, sha, path)
+
+        # 如果有上次成功的镜像索引，把它移到最前面优先尝试
+        preferred = getattr(self, '_preferred_mirror_index', None)
+        if preferred is not None and 0 < preferred < len(urls):
+            urls = [urls[preferred]] + urls[:preferred] + urls[preferred + 1:]
+
+        for idx, url in enumerate(urls):
             try:
                 r = await self.client.get(url, timeout=30)
                 if r.status_code == 200:
                     self.log.info(f'下载成功: {path} (来自 {url.split("/")[2]})')
+                    # 记录本次成功的镜像在原始列表中的位置
+                    original_urls = self._build_mirror_urls(repo, sha, path)
+                    try:
+                        self._preferred_mirror_index = original_urls.index(url)
+                    except ValueError:
+                        pass
                     return r.content
                 self.log.error(f'下载失败: {path} (来自 {url.split("/")[2]}) - 状态码: {r.status_code}')
             except httpx.RequestError as e:
@@ -2266,59 +2356,56 @@ class CaiBackend:
             for depot_id, manifest_id, size, source in depot_tuples
         ]
 
-    async def _add_free_dlcs_to_lua(self, app_id: str, lua_filepath: Path):
-        self.log.info(f"开始为 AppID {app_id} 查找无密钥/无Depot的DLC...")
-        try:
-            all_dlc_ids = await self._get_dlc_ids(app_id)
-            if not all_dlc_ids:
-                self.log.info(f"AppID {app_id} 未找到任何DLC。")
-                return
+    async def _add_free_dlcs_to_lua(self, app_id: str, lua_filepath: Path) -> bool:
+            """重写：Reborn 过滤逻辑 + 异步文件锁 + 全局超时控制"""
+            timeout = int(self.config.get("DLCTimeout", 60))
 
-            tasks = [self._get_depots(dlc_id) for dlc_id in all_dlc_ids]
-            results = await asyncio.gather(*tasks)
+            async def _do_fetch_and_write():
+                try:
+                    all_dlc_ids = await self._get_dlc_ids(app_id)
+                    if not all_dlc_ids:
+                        return True
 
-            depot_less_dlc_ids = [dlc_id for dlc_id, dlc_depots in zip(all_dlc_ids, results) if not dlc_depots]
-            
-            if not depot_less_dlc_ids:
-                self.log.info(f"未找到适用于 AppID {app_id} 的无密钥/无Depot的DLC。")
-                return
+                    # 用主游戏 depot 信息过滤掉已有 depot 的 DLC，只处理"落单"的
+                    main_depots = await self.get_depots_safe(app_id)
+                    dlcs_with_depots = {src.split(":")[1] for _, _, _, src in main_depots if src.startswith("DLC:")}
+                    depot_less_dlc_ids = [str(dlc) for dlc in all_dlc_ids if str(dlc) not in dlcs_with_depots]
 
-            async with self.lock:
-                if not lua_filepath.exists():
-                    self.log.error(f"目标LUA文件 {lua_filepath} 不存在，无法合并DLC。")
-                    return
+                    if not depot_less_dlc_ids:
+                        return True
 
-                async with aiofiles.open(lua_filepath, 'r', encoding='utf-8') as f:
-                    existing_lines = [line.strip() for line in await f.readlines() if line.strip()]
-                
-                existing_appids = {match.group(1) for line in existing_lines if (match := re.search(r'addappid\((\d+)', line))}
-                new_dlcs_to_add = [dlc_id for dlc_id in depot_less_dlc_ids if dlc_id not in existing_appids]
-                
-                if not new_dlcs_to_add:
-                    self.log.info(f"所有找到的无Depot DLC均已存在于解锁文件中。无需添加。")
-                    return
+                    async with self.lock:
+                        if not lua_filepath.exists():
+                            return False
+                        async with aiofiles.open(lua_filepath, 'r', encoding='utf-8') as f:
+                            existing_lines = [line.strip() for line in (await f.read()).splitlines() if line.strip()]
 
-                self.log.info(f"找到 {len(new_dlcs_to_add)} 个新的无密钥/无Depot DLC，正在合并到 LUA 文件...")
+                        existing_appids = {m.group(1) for line in existing_lines if (m := re.search(r'addappid\((\d+)', line))}
+                        new_dlcs_to_add = [dlc for dlc in depot_less_dlc_ids if dlc not in existing_appids]
+                        if not new_dlcs_to_add:
+                            return True
 
-                final_lines = set(existing_lines)
-                for dlc_id in new_dlcs_to_add: final_lines.add(f"addappid({dlc_id})")
+                        final_lines = set(existing_lines)
+                        for dlc_id in new_dlcs_to_add:
+                            final_lines.add(f"addappid({dlc_id})")
 
-                def sort_key(line):
-                    match_add = re.search(r'addappid\((\d+)', line)
-                    if match_add: return (0, int(match_add.group(1)))
-                    match_set = re.search(r'setManifestid\((\d+)', line)
-                    if match_set: return (1, int(match_set.group(1)))
-                    return (2, line)
-                
-                sorted_lines = sorted(list(final_lines), key=sort_key)
+                        def sort_key(line):
+                            if m := re.search(r'addappid\((\d+)', line): return (0, int(m.group(1)))
+                            if m := re.search(r'setManifestid\((\d+)', line): return (1, int(m.group(1)))
+                            return (2, line)
 
-                async with aiofiles.open(lua_filepath, 'w', encoding='utf-8') as f:
-                    await f.write('\n'.join(sorted_lines) + '\n')
-            
-            self.log.info(f"成功将 {len(new_dlcs_to_add)} 个新的无密钥/无Depot DLC合并到 {lua_filepath.name}")
+                        sorted_lines = sorted(list(final_lines), key=sort_key)
+                        async with aiofiles.open(lua_filepath, 'w', encoding='utf-8') as f:
+                            await f.write('\n'.join(sorted_lines) + '\n')
+                    return True
+                except Exception:
+                    return False
 
-        except Exception as e:
-            self.log.error(f"添加无密钥DLC时出错: {self.stack_error(e)}")
+            try:
+                return await asyncio.wait_for(_do_fetch_and_write(), timeout=timeout)
+            except asyncio.TimeoutError:
+                self.log.error(f"AppID {app_id} DLC 检索任务超时，已释放")
+                return False
 
     # MODIFIED: Added patch_depot_key parameter
     async def _process_zip_manifest_generic(self, app_id: str, download_url: str, source_name: str, unlocker_type: str, use_st_auto_update: bool, add_all_dlc: bool, patch_depot_key: bool = False) -> bool:
@@ -2349,7 +2436,8 @@ class CaiBackend:
             self.log.info('正在解压...')
             with zipfile.ZipFile(zip_path, 'r') as zip_ref: zip_ref.extractall(extract_path)
             
-            st_files = list(extract_path.glob('*.st'))
+            # codeload zip 解压后文件在子目录里（如 ManifestHub-{app_id}/），用 rglob 递归匹配
+            st_files = list(extract_path.rglob('*.st'))
             if st_files:
                 st_converter = STConverter()
                 for st_file in st_files:
@@ -2359,8 +2447,8 @@ class CaiBackend:
                         self.log.info(f'已转换 {st_file.name} -> {st_file.with_suffix(".lua").name}')
                     except Exception as e: self.log.error(f'转换 .st 文件 {st_file.name} 失败: {e}')
 
-            manifest_files = list(extract_path.glob('*.manifest'))
-            lua_files = list(extract_path.glob('*.lua'))
+            manifest_files = list(extract_path.rglob('*.manifest'))
+            lua_files = list(extract_path.rglob('*.lua'))
             
             if unlocker_type == "steamtools":
                 self.log.info(f"SteamTools 自动更新模式: {'已启用' if use_st_auto_update else '已禁用'}")
@@ -2429,6 +2517,7 @@ class CaiBackend:
             "walftech": "https://walftech.com/proxy.php?url=https%3A%2F%2Fsteamgames554.s3.us-east-1.amazonaws.com%2F{app_id}.zip",
             "steamdatabase": "https://steamdatabase.s3.eu-north-1.amazonaws.com/{app_id}.zip",
             "steamautocracks_v2": "special",  # 特殊处理标识
+            "steamautocracks_v1": "special",  # 特殊处理标识
             "buqiuren": "special",
             "sudama": "special"
         }
@@ -2438,12 +2527,16 @@ class CaiBackend:
             "furcate": "Furcate", 
             "walftech": "Walftech", 
             "steamdatabase": "SteamDatabase",
-            "steamautocracks_v2": "SteamAutoCracks/ManifestHub(2)"
+            "steamautocracks_v2": "SteamAutoCracks/ManifestHub(2)",
+            "steamautocracks_v1": "SteamAutoCracks V1 (ManifestHub)"
         }
         
         # 特殊处理 steamautocracks_v2
         if tool_type == "steamautocracks_v2":
             return await self.process_steamautocracks_v2_manifest(app_id, unlocker_type, use_st_auto_update, add_all_dlc, patch_depot_key)
+        # 特殊处理 steamautocracks_v1（GitHub分支方式）
+        if tool_type == "steamautocracks_v1":
+            return await self.process_github_manifest(app_id, "SteamAutoCracks/ManifestHub", unlocker_type, use_st_auto_update, add_all_dlc, patch_depot_key)
         if tool_type == "buqiuren":
             return await self.process_buqiuren_manifest(app_id)
             
@@ -2464,13 +2557,42 @@ class CaiBackend:
         download_url = url_template.format(app_id=app_id)
         return await self._process_zip_manifest_generic(app_id, download_url, source_name, unlocker_type, use_st_auto_update, add_all_dlc, patch_depot_key)
 
+    async def _fetch_branch_via_web(self, app_id: str, repo: str, unlocker_type: str, use_st_auto_update: bool, add_all_dlc: bool, patch_depot_key: bool) -> bool:
+        """API 耗尽时的兜底方案：直接从 codeload.github.com 下载分支 zip"""
+        self.log.info(f"[Web兜底] 尝试直接下载 {repo} 分支 {app_id} 的 zip 包...")
+        download_url = f"https://codeload.github.com/{repo}/zip/refs/heads/{app_id}"
+        result = await self._process_zip_manifest_generic(
+            app_id, download_url, f"GitHub/{repo}(web)", unlocker_type, use_st_auto_update, add_all_dlc, patch_depot_key
+        )
+        if result:
+            self.log.info(f"[Web兜底] 成功从 codeload.github.com 获取 {app_id} 的清单")
+        else:
+            self.log.warning(f"[Web兜底] codeload.github.com 也未找到 {app_id}，尝试国内镜像...")
+            # 国内镜像 codeload 代理
+            mirror_urls = [
+                f"https://gh-proxy.org/https://codeload.github.com/{repo}/zip/refs/heads/{app_id}",
+                f"https://cdn.gh-proxy.org/https://codeload.github.com/{repo}/zip/refs/heads/{app_id}",
+                f"https://edgeone.gh-proxy.org/https://codeload.github.com/{repo}/zip/refs/heads/{app_id}",
+            ]
+            for url in mirror_urls:
+                self.log.info(f"[Web兜底] 尝试镜像: {url.split('/')[2]}")
+                result = await self._process_zip_manifest_generic(
+                    app_id, url, f"GitHub/{repo}(mirror)", unlocker_type, use_st_auto_update, add_all_dlc, patch_depot_key
+                )
+                if result:
+                    self.log.info(f"[Web兜底] 镜像成功: {url.split('/')[2]}")
+                    return True
+        return result
+
     async def fetch_branch_info(self, url: str, headers: Dict) -> Dict | None:
         try:
             r = await self.client.get(url, headers=headers)
             r.raise_for_status()
             return r.json()
         except httpx.HTTPStatusError as e:
-            if e.response.status_code == 403: self.log.error("GitHub API请求次数已用尽。")
+            if e.response.status_code == 403:
+                self.log.error("GitHub API请求次数已用尽。")
+                self._github_api_exhausted = True  # 标记 API 已耗尽
             elif e.response.status_code != 404: self.log.error(f"从 {url} 获取信息失败: {self.stack_error(e)}")
             return None
         except Exception as e:
@@ -2506,9 +2628,18 @@ class CaiBackend:
         github_token = self.config.get("Github_Personal_Token", "")
         headers = {'Authorization': f'Bearer {github_token}'} if github_token else None
         
+        # 如果本次会话已知 API 耗尽，直接走 web 兜底
+        if getattr(self, '_github_api_exhausted', False):
+            self.log.warning(f"GitHub API 已耗尽，直接使用 Web 兜底下载 {repo}/{app_id}")
+            return await self._fetch_branch_via_web(app_id, repo, unlocker_type, use_st_auto_update, add_all_dlc, patch_depot_key)
+        
         url = f'https://api.github.com/repos/{repo}/branches/{app_id}'
         r_json = await self.fetch_branch_info(url, headers)
         if not (r_json and 'commit' in r_json):
+            # API 耗尽时 fallback
+            if getattr(self, '_github_api_exhausted', False):
+                self.log.warning(f"API 耗尽，切换到 Web 兜底下载 {repo}/{app_id}")
+                return await self._fetch_branch_via_web(app_id, repo, unlocker_type, use_st_auto_update, add_all_dlc, patch_depot_key)
             self.log.error(f'无法获取 {repo} 中 {app_id} 的分支信息。如果该清单在此仓库中不存在，这是正常现象。')
             return False
         
@@ -2684,3 +2815,205 @@ class CaiBackend:
                     self.log.info(f'已重命名: {file.name} -> {new_filename.name}')
                 except Exception as e:
                     self.log.error(f'重命名失败 {file.name}: {e}')
+
+    # ==================== Steam 加速 ====================
+
+    # 参考 SteamTools Hosts 模式，将 Steam 关键域名指向国内可用 IP
+    STEAM_HOSTS_MAP = {
+        "store.steampowered.com":    "23.52.12.176",
+        "api.steampowered.com":      "23.52.12.176",
+        "steamcommunity.com":        "23.52.12.176",
+        "www.steamcommunity.com":    "23.52.12.176",
+        "cdn.steamcommunity.com":    "23.52.12.176",
+        "steamcdn-a.akamaihd.net":   "23.52.12.176",
+        "media.steampowered.com":    "23.52.12.176",
+        "cs.steampowered.com":       "23.52.12.176",
+        "login.steampowered.com":    "23.52.12.176",
+        "help.steampowered.com":     "23.52.12.176",
+        "partner.steamgames.com":    "23.52.12.176",
+        "steambroadcast.akamaized.net": "23.52.12.176",
+    }
+    HOSTS_MARK_BEGIN = "# >>> Cai-Install Steam Accelerate Begin <<<"
+    HOSTS_MARK_END   = "# >>> Cai-Install Steam Accelerate End <<<"
+    HOSTS_PATH = Path(os.environ.get("SystemRoot", "C:\\Windows")) / "System32" / "drivers" / "etc" / "hosts"
+
+    def _get_hosts_content(self) -> str:
+        try:
+            return self.HOSTS_PATH.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            return self.HOSTS_PATH.read_text(encoding="gbk")
+
+    def get_accelerate_status(self) -> bool:
+        """检查加速是否已启用（hosts 中是否有我们的标记）"""
+        try:
+            return self.HOSTS_MARK_BEGIN in self._get_hosts_content()
+        except Exception:
+            return False
+
+    def enable_steam_accelerate(self) -> Dict:
+        """向 hosts 写入 Steam 加速条目（需要管理员权限）"""
+        try:
+            content = self._get_hosts_content()
+            # 先清理旧条目
+            content = self._remove_accelerate_block(content)
+            block_lines = [self.HOSTS_MARK_BEGIN]
+            for domain, ip in self.STEAM_HOSTS_MAP.items():
+                block_lines.append(f"{ip}  {domain}")
+            block_lines.append(self.HOSTS_MARK_END)
+            new_content = content.rstrip("\n") + "\n" + "\n".join(block_lines) + "\n"
+            self.HOSTS_PATH.write_text(new_content, encoding="utf-8")
+            return {"success": True}
+        except PermissionError:
+            return {"success": False, "error": "permission_denied"}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def disable_steam_accelerate(self) -> Dict:
+        """从 hosts 移除 Steam 加速条目"""
+        try:
+            content = self._get_hosts_content()
+            new_content = self._remove_accelerate_block(content)
+            self.HOSTS_PATH.write_text(new_content, encoding="utf-8")
+            return {"success": True}
+        except PermissionError:
+            return {"success": False, "error": "permission_denied"}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def _remove_accelerate_block(self, content: str) -> str:
+        lines = content.splitlines()
+        out, skip = [], False
+        for line in lines:
+            if line.strip() == self.HOSTS_MARK_BEGIN:
+                skip = True
+                continue
+            if line.strip() == self.HOSTS_MARK_END:
+                skip = False
+                continue
+            if not skip:
+                out.append(line)
+        # 去掉末尾多余空行
+        while out and out[-1].strip() == "":
+            out.pop()
+        return "\n".join(out) + "\n" if out else ""
+
+    def is_admin(self) -> bool:
+        """检查当前进程是否有管理员权限"""
+        try:
+            import ctypes
+            return bool(ctypes.windll.shell32.IsUserAnAdmin())
+        except Exception:
+            return False
+
+    def run_as_admin_to_toggle_accelerate(self, enable: bool) -> Dict:
+        """以管理员权限重新运行自身来修改 hosts"""
+        try:
+            import ctypes
+            script = self.project_root / "_hosts_helper.py"
+            action = "enable" if enable else "disable"
+            helper_code = f"""
+import sys, os
+from pathlib import Path
+sys.path.insert(0, r"{self.project_root}")
+from backend import CaiBackend
+b = CaiBackend()
+result = b.{"enable_steam_accelerate" if enable else "disable_steam_accelerate"}()
+print("OK" if result["success"] else result.get("error","fail"))
+"""
+            script.write_text(helper_code, encoding="utf-8")
+            ret = ctypes.windll.shell32.ShellExecuteW(
+                None, "runas", sys.executable, f'"{script}"', None, 0
+            )
+            script.unlink(missing_ok=True)
+            return {"success": ret > 32}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    # ==================== 账号切换 ====================
+
+    def get_steam_accounts(self) -> List[Dict]:
+        """读取 loginusers.vdf，返回所有已登录账号列表"""
+        try:
+            steam_path = self.get_steam_path()
+            if not steam_path:
+                return []
+            vdf_path = steam_path / "config" / "loginusers.vdf"
+            if not vdf_path.exists():
+                return []
+            with open(vdf_path, "r", encoding="utf-8") as f:
+                data = vdf.load(f)
+            users_raw = data.get("users", {})
+            accounts = []
+            for steam_id, info in users_raw.items():
+                accounts.append({
+                    "steam_id": steam_id,
+                    "account_name": info.get("AccountName", ""),
+                    "persona_name": info.get("PersonaName", ""),
+                    "most_recent": info.get("MostRecent", "0") == "1",
+                    "remember_password": info.get("RememberPassword", "0") == "1",
+                    "timestamp": info.get("Timestamp", "0"),
+                })
+            accounts.sort(key=lambda x: int(x["timestamp"]), reverse=True)
+            return accounts
+        except Exception as e:
+            self.log.error(f"读取账号列表失败: {e}")
+            return []
+
+    def switch_steam_account(self, account_name: str) -> Dict:
+        """
+        切换 Steam 账号：
+        1. 修改 loginusers.vdf 中的 MostRecent
+        2. 写注册表 AutoLoginUser
+        """
+        try:
+            steam_path = self.get_steam_path()
+            if not steam_path:
+                return {"success": False, "error": "steam_not_found"}
+
+            # 1. 更新 loginusers.vdf
+            vdf_path = steam_path / "config" / "loginusers.vdf"
+            if vdf_path.exists():
+                with open(vdf_path, "r", encoding="utf-8") as f:
+                    data = vdf.load(f)
+                users_raw = data.get("users", {})
+                for sid, info in users_raw.items():
+                    info["MostRecent"] = "1" if info.get("AccountName", "") == account_name else "0"
+                    if info.get("AccountName", "") == account_name:
+                        info["RememberPassword"] = "1"
+                with open(vdf_path, "w", encoding="utf-8") as f:
+                    vdf.dump(data, f, pretty=True)
+
+            # 2. 写注册表
+            key = winreg.OpenKey(
+                winreg.HKEY_CURRENT_USER,
+                r"Software\Valve\Steam",
+                0, winreg.KEY_SET_VALUE
+            )
+            winreg.SetValueEx(key, "AutoLoginUser", 0, winreg.REG_SZ, account_name)
+            winreg.SetValueEx(key, "RememberPassword", 0, winreg.REG_DWORD, 1)
+            winreg.CloseKey(key)
+
+            return {"success": True}
+        except Exception as e:
+            self.log.error(f"切换账号失败: {e}")
+            return {"success": False, "error": str(e)}
+
+    def delete_steam_account(self, steam_id: str) -> Dict:
+        """从 loginusers.vdf 删除指定账号记录"""
+        try:
+            steam_path = self.get_steam_path()
+            if not steam_path:
+                return {"success": False, "error": "steam_not_found"}
+            vdf_path = steam_path / "config" / "loginusers.vdf"
+            if not vdf_path.exists():
+                return {"success": False, "error": "vdf_not_found"}
+            with open(vdf_path, "r", encoding="utf-8") as f:
+                data = vdf.load(f)
+            users_raw = data.get("users", {})
+            if steam_id in users_raw:
+                del users_raw[steam_id]
+            with open(vdf_path, "w", encoding="utf-8") as f:
+                vdf.dump(data, f, pretty=True)
+            return {"success": True}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
