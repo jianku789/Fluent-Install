@@ -202,8 +202,6 @@ TEXTS = {
         "window_effect_hint": "选择窗口背景特效",
         "effect_none": "无特效",
         "effect_mica": "云母 (Win11)",
-        "effect_acrylic": "亚克力 (Win10+)",
-        "effect_aero": "Aero 毛玻璃",
         "light_theme": "浅色",
         "dark_theme": "深色",
         "follow_system": "跟随系统",
@@ -5229,7 +5227,12 @@ class MainWindow(MSFluentWindow):
         )
         
         if dialog.exec():
-            # 用户点击确认
+            async def _restart():
+                async with CaiBackend() as backend:
+                    await backend.initialize()
+                    success = backend.restart_steam()
+                    return success
+
             _replace_worker(getattr(self, 'restart_steam_worker', None))
             self.restart_steam_worker = AsyncWorker(_restart())
             self.restart_steam_worker.result_ready.connect(self.on_restart_complete)

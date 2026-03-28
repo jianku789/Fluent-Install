@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Tuple, Any, List, Dict, Literal
 from urllib.parse import quote
 
-CURRENT_VERSION = "1.9"  # 当前版本号
+CURRENT_VERSION = "1.9.5"  # 当前版本号
 GITHUB_REPO = "zhouchentao666/Fluent-Install"
 
 # --- LOGGING SETUP ---
