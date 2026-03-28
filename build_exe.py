@@ -18,7 +18,7 @@ def build_exe():
     # PyInstaller 参数
     args = [
         'fluent_app.py',  # 主程序文件
-        '--name=CaiInstall-Fluent',  # 生成的 exe 名称
+        '--name=FluentInstall',  # 生成的 exe 名称
         '--onefile',  # 打包成单个文件
         '--windowed',  # 无控制台窗口（GUI程序）
         '--icon=assets/icon.ico',  # 图标文件（如果存在）
@@ -68,7 +68,7 @@ def build_exe():
         PyInstaller.__main__.run(args)
         
         print("\n打包完成！")
-        print(f"生成的 exe 文件在: {current_dir / 'dist' / 'CaiInstall-Fluent.exe'}")
+        print(f"生成的 exe 文件在: {current_dir / 'dist' / 'FluentInstall.exe'}")
         
     except Exception as e:
         print(f"打包失败: {e}")
