@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Tuple, Any, List, Dict, Literal
 from urllib.parse import quote
 
-CURRENT_VERSION = "2.1"  # 当前版本号
+CURRENT_VERSION = "2.2"  # 当前版本号
 GITHUB_REPO = "zhouchentao666/Fluent-Install"
 
 # --- LOGGING SETUP ---
@@ -2068,6 +2068,195 @@ class CaiBackend:
             self.log.error(f'处理不求人库清单时出错: {self.stack_error(e)}')
             return False
 
+    async def process_github_api_manifest(self, app_id: str, unlocker_type: str, use_st_auto_update: bool, add_all_dlc: bool = False, patch_depot_key: bool = False) -> bool:
+        """处理方式N+1：基于GitHub API的清单下载器（从SteamAutoCracks/ManifestHub仓库下载）"""
+        try:
+            self.log.info(f'正从 GitHub API 处理 AppID {app_id} 的清单...')
+            
+            # 获取GitHub仓库信息
+            repo = "SteamAutoCracks/ManifestHub"
+            github_token = self.config.get("Github_Personal_Token", "")
+            headers = {'Authorization': f'Bearer {github_token}'} if github_token else {}
+            
+            # 获取分支信息
+            branch_url = f"https://api.github.com/repos/{repo}/branches/{app_id}"
+            branch_response = await self.client.get(branch_url, headers=headers, timeout=30)
+            
+            if branch_response.status_code != 200:
+                self.log.warning(f"GitHub API: 未找到 AppID {app_id} 的分支，跳过处理")
+                return True  # 返回True表示跳过了处理，而不是失败
+            
+            branch_data = branch_response.json()
+            commit_sha = branch_data['commit']['sha']
+            
+            # 获取文件树
+            tree_url = f"https://api.github.com/repos/{repo}/git/trees/{commit_sha}?recursive=1"
+            tree_response = await self.client.get(tree_url, headers=headers, timeout=30)
+            
+            if tree_response.status_code != 200:
+                self.log.error(f"GitHub API: 无法获取文件树，状态码 {tree_response.status_code}")
+                return False
+            
+            tree_data = tree_response.json()
+            files = [file for file in tree_data.get('tree', []) if file['type'] == 'blob']
+            
+            if not files:
+                self.log.warning(f"GitHub API: AppID {app_id} 分支中没有找到文件")
+                return True
+            
+            self.log.info(f"GitHub API: 找到 {len(files)} 个文件，开始下载...")
+            
+            # 创建临时目录
+            import tempfile
+            import zipfile
+            import shutil
+            
+            temp_dir = Path(tempfile.mkdtemp())
+            extract_path = temp_dir / "extract"
+            extract_path.mkdir(parents=True, exist_ok=True)
+            
+            success_count = 0
+            
+            # 下载所有文件
+            for file_info in files:
+                file_path = file_info['path']
+                file_url = f"https://raw.githubusercontent.com/{repo}/{app_id}/{file_path}"
+                
+                try:
+                    file_response = await self.client.get(file_url, timeout=30)
+                    if file_response.status_code == 200:
+                        # 创建子目录结构
+                        target_path = extract_path / file_path
+                        target_path.parent.mkdir(parents=True, exist_ok=True)
+                        
+                        # 保存文件
+                        target_path.write_bytes(file_response.content)
+                        success_count += 1
+                        self.log.info(f"GitHub API: 已下载 {file_path}")
+                    else:
+                        self.log.warning(f"GitHub API: 下载 {file_path} 失败，状态码 {file_response.status_code}")
+                except Exception as e:
+                    self.log.warning(f"GitHub API: 下载 {file_path} 时出错: {e}")
+            
+            if success_count == 0:
+                self.log.error(f"GitHub API: AppID {app_id} 没有成功下载任何文件")
+                shutil.rmtree(temp_dir, ignore_errors=True)
+                return False
+            
+            # 处理下载的文件
+            st_files = list(extract_path.rglob('*.st'))
+            manifest_files = list(extract_path.rglob('*.manifest'))
+            lua_files = list(extract_path.rglob('*.lua'))
+            
+            # 转换.st文件为.lua文件
+            if st_files:
+                st_converter = STConverter()
+                for st_file in st_files:
+                    try:
+                        lua_content = st_converter.convert_file(str(st_file))
+                        st_file.with_suffix('.lua').write_text(lua_content, encoding='utf-8')
+                        self.log.info(f"GitHub API: 已转换 {st_file.name} -> {st_file.with_suffix('.lua').name}")
+                    except Exception as e:
+                        self.log.error(f"GitHub API: 转换 {st_file.name} 失败: {e}")
+            
+            # 复制清单文件到Steam目录
+            depotcache_paths = [
+                self.steam_path / 'config' / 'depotcache',
+                self.steam_path / 'depotcache'
+            ]
+            
+            for p in depotcache_paths:
+                p.mkdir(parents=True, exist_ok=True)
+            
+            manifest_count = 0
+            for manifest_file in manifest_files:
+                try:
+                    for p in depotcache_paths:
+                        target_path = p / manifest_file.name
+                        shutil.copy2(manifest_file, target_path)
+                    manifest_count += 1
+                except Exception as e:
+                    self.log.warning(f"GitHub API: 复制清单文件 {manifest_file.name} 失败: {e}")
+            
+            # 生成或更新lua文件
+            if unlocker_type == "steamtools":
+                stplug_path = self.steam_path / 'config' / 'stplug-in'
+                stplug_path.mkdir(parents=True, exist_ok=True)
+                
+                # 解析现有的lua文件或创建新的
+                all_depots = {}
+                for lua_f in lua_files:
+                    all_depots.update(self.parse_lua_file_for_depots(str(lua_f)))
+                
+                lua_filepath = stplug_path / f"{app_id}.lua"
+                async with aiofiles.open(lua_filepath, mode="w", encoding="utf-8") as lua_file:
+                    await lua_file.write(f'addappid({app_id})\n')
+                    
+                    # 添加depot密钥
+                    for depot_id, info in all_depots.items():
+                        decryption_key = info.get('DecryptionKey', '')
+                        await lua_file.write(f'addappid({depot_id}, 1, "{decryption_key}")\n')
+                    
+                    # 添加manifest映射
+                    for manifest_f in manifest_files:
+                        import re
+                        match = re.search(r'(\d+)_(\w+)\.manifest', manifest_f.name)
+                        if match:
+                            depot_id, manifest_id = match.groups()
+                            line = f'setManifestid({depot_id}, "{manifest_id}")\n'
+                            await lua_file.write('--' + line if use_st_auto_update else line)
+                
+                self.log.info(f"GitHub API: 已生成 {app_id}.lua")
+                
+                # 添加免费DLC
+                if add_all_dlc:
+                    await self._add_free_dlcs_to_lua(app_id, lua_filepath)
+                
+                # 修补depot密钥
+                if patch_depot_key:
+                    await self.patch_lua_with_depotkey(app_id, lua_filepath)
+            
+            # 清理临时文件
+            shutil.rmtree(temp_dir, ignore_errors=True)
+            
+            self.log.info(f"GitHub API: 成功处理 AppID {app_id}，下载了 {success_count} 个文件，复制了 {manifest_count} 个清单")
+            return True
+            
+        except Exception as e:
+            self.log.error(f'处理 GitHub API 清单时出错: {self.stack_error(e)}')
+            return False
+
+    async def _download_single_manifest_via_github_api(self, app_id: str, depot_id: str, manifest_id: str, filename: str):
+        """通过GitHub API下载单个清单文件（方法3：N+1）"""
+        try:
+            # 获取GitHub仓库信息
+            repo = "SteamAutoCracks/ManifestHub"
+            github_token = self.config.get("Github_Personal_Token", "")
+            headers = {'Authorization': f'Bearer {github_token}'} if github_token else {}
+            
+            # 检查分支是否存在
+            branch_url = f"https://api.github.com/repos/{repo}/branches/{app_id}"
+            branch_response = await self.client.get(branch_url, headers=headers, timeout=30)
+            
+            if branch_response.status_code != 200:
+                self.log.warning(f"[补全清单文件] 方法3：GitHub API未找到AppID {app_id}的分支")
+                return None
+            
+            # 直接尝试下载清单文件
+            file_url = f"https://raw.githubusercontent.com/{repo}/{app_id}/{filename}"
+            file_response = await self.client.get(file_url, timeout=30)
+            
+            if file_response.status_code == 200 and file_response.content:
+                self.log.info(f"[补全清单文件] 方法3：成功从GitHub API下载 {filename}")
+                return file_response.content
+            else:
+                self.log.warning(f"[补全清单文件] 方法3：GitHub API下载失败 {filename}，状态码 {file_response.status_code}")
+                return None
+                
+        except Exception as e:
+            self.log.warning(f"[补全清单文件] 方法3：GitHub API下载异常 {filename}: {e}")
+            return None
+
     # NEW: DepotKey patching methods
     async def download_depotkeys_json(self) -> Dict:
         """
@@ -3534,9 +3723,23 @@ print("OK" if result["success"] else result.get("error","fail"))
                     }
 
                 # 方法1失败后走方法2 API
+                # 方法1失败后走方法2 API
                 if not content:
                     if not manifest_api_key:
-                        self.log.error(f"[补全清单文件] 方法2不可用（未配置 ManifestAPIKey）: {filename}")
+                        self.log.warning(f"[补全清单文件] 方法2不可用（未配置 ManifestAPIKey）: {filename}")
+                        # 方法3：直接使用GitHub API下载器（N+1）
+                        _report(
+                            min(95, file_base_progress + 10),
+                            f"补全清单文件 {index}/{total}：方法3（GitHub API）"
+                        )
+                        self.log.info(f"[补全清单文件] 尝试方法3（GitHub API）下载: {filename}")
+                        
+                        # 使用GitHub API下载整个AppID的清单
+                        method3_success = await self._download_single_manifest_via_github_api(app_id, depot_id, manifest_id, filename)
+                        if method3_success:
+                            content = method3_success
+                            used_url = f"GitHub API (AppID: {app_id})"
+                            self.log.info(f"[补全清单文件] 方法3下载成功: {filename}")
                     else:
                         for api_attempt in range(1, method2_max_retries + 1):
                             if _is_cancelled():
@@ -3566,7 +3769,7 @@ print("OK" if result["success"] else result.get("error","fail"))
 
                 if not content:
                     failed_names.append(filename)
-                    self.log.error(f"[补全清单文件] 下载失败: {filename}（方法1/方法2重试后仍失败）")
+                    self.log.error(f"[补全清单文件] 下载失败: {filename}（方法1/方法2/方法3重试后仍失败）")
                     continue
 
                 (depotcache / filename).write_bytes(content)

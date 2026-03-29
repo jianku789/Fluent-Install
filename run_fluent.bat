@@ -18,10 +18,10 @@ python -c "import qasync" >nul 2>&1
 if errorlevel 1 (
     echo [WARNING] Missing dependencies, installing automatically...
     echo.
-    pip install -r requirements_fluent.txt
+    pip install -r requirements.txt
     if errorlevel 1 (
         echo.
-        echo [ERROR] Dependency installation failed, please run manually: pip install -r requirements_fluent.txt
+        echo [ERROR] Dependency installation failed, please run manually: pip install -r requirements.txt
         pause
         exit /b 1
     )
