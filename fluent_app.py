@@ -3,6 +3,7 @@ Cai Install - Fluent Design 版本
 使用 PyQt-Fluent-Widgets 框架
 """
 import sys
+import os
 import asyncio
 import logging
 from pathlib import Path
@@ -25,7 +26,7 @@ from qfluentwidgets import (
 )
 
 # 导入后端
-from backend import CaiBackend, get_steam_lang, CURRENT_VERSION
+from backend import CaiBackend, get_steam_lang, CURRENT_VERSION, GITHUB_REPO
 
 import time as _time
 # 模块级推荐缓存（进程内共享，避免切换页面重复请求）
@@ -230,7 +231,42 @@ TEXTS = {
         "already_latest": "已是最新版本",
         "already_latest_content": "当前已是最新版本，无需更新。",
         "check_update_failed": "检查更新失败",
-        "restart_steam_title": "重启 Steam",
+                "drm_page_title": "D加密授权器",
+        "drm_step1": "步骤 1：获取授权文件",
+        "drm_cw_file": "CW 文件",
+        "drm_cw_file_hint": "选择本地 .cw 授权文件并解密",
+        "drm_cw_placeholder": "选择 .cw 授权文件",
+        "drm_browse": "浏览",
+        "drm_decrypt": "解密",
+        "drm_auth_code": "授权码",
+        "drm_auth_code_hint": "通过授权码在线下载 CW 文件",
+        "drm_auth_code_placeholder": "输入授权码",
+        "drm_download_decrypt": "下载并解密",
+        "drm_online_auth": "在线获取授权",
+        "drm_online_auth_hint": "访问外部授权网站",
+        "drm_extract_title": "获取 CW 文件（本地提取）",
+        "drm_extract_hint": "需要已登录 Steam 且拥有该游戏",
+        "drm_extract_placeholder": "输入游戏 AppID（当前账号必须拥有该游戏）",
+        "drm_gen_authcode": "生成授权码",
+        "drm_extract_cw": "本地提取 CW",
+        "drm_info_title": "授权信息",
+        "drm_valid_from": "生效时间",
+        "drm_valid_to": "失效时间",
+        "drm_step2": "步骤 2：GL 模式授权（SteamTools）",
+        "drm_gl_hint": "将授权 ticket 写入 SteamTools 目录",
+        "drm_gl_btn": "开始授权 (GL/SteamTools)",
+        "drm_log": "日志",
+        "drm_nav": "D加密",
+        "drm_tip_select_cw": "请先选择 CW 文件",
+        "drm_tip_enter_code": "请输入授权码",
+        "drm_tip_decrypt_first": "请先解密 CW 文件",
+        "drm_tip_valid_appid": "请输入有效的 AppID",
+        "drm_missing_dep": "缺少依赖",
+        "drm_missing_dep_hint": "请安装 pycryptodome: pip install pycryptodome",
+        "drm_decrypt_failed": "解密失败",
+        "drm_download_failed": "下载失败",
+        "drm_auth_success": "授权成功",
+        "drm_auth_failed": "授权失败","restart_steam_title": "重启 Steam",
         "restart_steam_confirm_message": "确定要重启 Steam 吗？\n\n这将关闭当前运行的 Steam 并重新启动。",
         
         # 缺失的翻译键
@@ -381,7 +417,42 @@ TEXTS = {
         "already_latest": "Already Up to Date",
         "already_latest_content": "You are running the latest version.",
         "check_update_failed": "Check Update Failed",
-        "restart_steam_title": "Restart Steam",
+                "drm_page_title": "D-Encryption Authorizer",
+        "drm_step1": "Step 1: Get Authorization File",
+        "drm_cw_file": "CW File",
+        "drm_cw_file_hint": "Select local .cw file and decrypt",
+        "drm_cw_placeholder": "Select .cw authorization file",
+        "drm_browse": "Browse",
+        "drm_decrypt": "Decrypt",
+        "drm_auth_code": "Auth Code",
+        "drm_auth_code_hint": "Download CW file online via auth code",
+        "drm_auth_code_placeholder": "Enter auth code",
+        "drm_download_decrypt": "Download & Decrypt",
+        "drm_online_auth": "Get Auth Online",
+        "drm_online_auth_hint": "Visit external authorization websites",
+        "drm_extract_title": "Get CW File (Local Extract)",
+        "drm_extract_hint": "Requires Steam login and game ownership",
+        "drm_extract_placeholder": "Enter game AppID (must own the game)",
+        "drm_gen_authcode": "Generate Auth Code",
+        "drm_extract_cw": "Extract CW Locally",
+        "drm_info_title": "Authorization Info",
+        "drm_valid_from": "Valid From",
+        "drm_valid_to": "Valid To",
+        "drm_step2": "Step 2: GL Mode Authorization (SteamTools)",
+        "drm_gl_hint": "Write authorization ticket to SteamTools directory",
+        "drm_gl_btn": "Authorize (GL/SteamTools)",
+        "drm_log": "Log",
+        "drm_nav": "D-Encryption",
+        "drm_tip_select_cw": "Please select a CW file first",
+        "drm_tip_enter_code": "Please enter auth code",
+        "drm_tip_decrypt_first": "Please decrypt CW file first",
+        "drm_tip_valid_appid": "Please enter a valid AppID",
+        "drm_missing_dep": "Missing Dependency",
+        "drm_missing_dep_hint": "Please install pycryptodome: pip install pycryptodome",
+        "drm_decrypt_failed": "Decrypt Failed",
+        "drm_download_failed": "Download Failed",
+        "drm_auth_success": "Authorization Successful",
+        "drm_auth_failed": "Authorization Failed","restart_steam_title": "Restart Steam",
         "restart_steam_confirm_message": "Are you sure you want to restart Steam?\n\nThis will close the currently running Steam and restart it.",
         
         # 缺失的翻译键
@@ -541,6 +612,42 @@ TEXTS = {
         "check_update_failed": "Échec de la vérification",
         "restart_steam_title": "Redémarrer Steam",
         "restart_steam_confirm_message": "Êtes-vous sûr de vouloir redémarrer Steam?\n\nCela fermera Steam en cours et le redémarrera.",
+        "drm_page_title": "Autorisation D-Chiffrement",
+        "drm_step1": "Étape 1: Obtenir le fichier d'autorisation",
+        "drm_cw_file": "Fichier CW",
+        "drm_cw_file_hint": "Sélectionner le fichier .cw local et déchiffrer",
+        "drm_cw_placeholder": "Sélectionner le fichier d'autorisation .cw",
+        "drm_browse": "Parcourir",
+        "drm_decrypt": "Déchiffrer",
+        "drm_auth_code": "Code d'autorisation",
+        "drm_auth_code_hint": "Télécharger le fichier CW en ligne via le code d'autorisation",
+        "drm_auth_code_placeholder": "Entrer le code d'autorisation",
+        "drm_download_decrypt": "Télécharger & Déchiffrer",
+        "drm_online_auth": "Obtenir l'autorisation en ligne",
+        "drm_online_auth_hint": "Visiter les sites d'autorisation externes",
+        "drm_extract_title": "Obtenir le fichier CW (Extraction locale)",
+        "drm_extract_hint": "Nécessite la connexion Steam et la possession du jeu",
+        "drm_extract_placeholder": "Entrer l'AppID du jeu (doit posséder le jeu)",
+        "drm_gen_authcode": "Générer le code d'autorisation",
+        "drm_extract_cw": "Extraire CW localement",
+        "drm_info_title": "Informations d'autorisation",
+        "drm_valid_from": "Valide à partir de",
+        "drm_valid_to": "Valide jusqu'à",
+        "drm_step2": "Étape 2: Autorisation mode GL (SteamTools)",
+        "drm_gl_hint": "Écrire le ticket d'autorisation dans le répertoire SteamTools",
+        "drm_gl_btn": "Autoriser (GL/SteamTools)",
+        "drm_log": "Journal",
+        "drm_nav": "D-Chiffrement",
+        "drm_tip_select_cw": "Veuillez d'abord sélectionner un fichier CW",
+        "drm_tip_enter_code": "Veuillez entrer un code d'autorisation",
+        "drm_tip_decrypt_first": "Veuillez d'abord déchiffrer le fichier CW",
+        "drm_tip_valid_appid": "Veuillez entrer un AppID valide",
+        "drm_missing_dep": "Dépendance manquante",
+        "drm_missing_dep_hint": "Veuillez installer pycryptodome: pip install pycryptodome",
+        "drm_decrypt_failed": "Échec du déchiffrement",
+        "drm_download_failed": "Échec du téléchargement",
+        "drm_auth_success": "Autorisation réussie",
+        "drm_auth_failed": "Autorisation échouée",
         "tip": "Astuce",
         "recognition_success": "Reconnaissance réussie",
         "game_not_found": "Jeu non trouvé",
@@ -698,6 +805,42 @@ TEXTS = {
         "check_update_failed": "Ошибка проверки",
         "restart_steam_title": "Перезапустить Steam",
         "restart_steam_confirm_message": "Вы уверены, что хотите перезапустить Steam?\n\nЭто закроет текущий Steam и перезапустит его.",
+        "drm_page_title": "Авторизатор D-Шифрования",
+        "drm_step1": "Шаг 1: Получить файл авторизации",
+        "drm_cw_file": "CW файл",
+        "drm_cw_file_hint": "Выберите локальный .cw файл и расшифруйте",
+        "drm_cw_placeholder": "Выберите файл авторизации .cw",
+        "drm_browse": "Обзор",
+        "drm_decrypt": "Расшифровать",
+        "drm_auth_code": "Код авторизации",
+        "drm_auth_code_hint": "Скачать CW файл онлайн через код авторизации",
+        "drm_auth_code_placeholder": "Введите код авторизации",
+        "drm_download_decrypt": "Скачать & Расшифровать",
+        "drm_online_auth": "Получить авторизацию онлайн",
+        "drm_online_auth_hint": "Посетить внешние сайты авторизации",
+        "drm_extract_title": "Получить CW файл (Локальное извлечение)",
+        "drm_extract_hint": "Требуется вход в Steam и владение игрой",
+        "drm_extract_placeholder": "Введите AppID игры (должен владеть игрой)",
+        "drm_gen_authcode": "Сгенерировать код авторизации",
+        "drm_extract_cw": "Локально извлечь CW",
+        "drm_info_title": "Информация авторизации",
+        "drm_valid_from": "Действительно с",
+        "drm_valid_to": "Действительно до",
+        "drm_step2": "Шаг 2: Авторизация режима GL (SteamTools)",
+        "drm_gl_hint": "Записать билет авторизации в каталог SteamTools",
+        "drm_gl_btn": "Авторизовать (GL/SteamTools)",
+        "drm_log": "Журнал",
+        "drm_nav": "D-Шифрование",
+        "drm_tip_select_cw": "Пожалуйста, сначала выберите CW файл",
+        "drm_tip_enter_code": "Пожалуйста, введите код авторизации",
+        "drm_tip_decrypt_first": "Пожалуйста, сначала расшифруйте CW файл",
+        "drm_tip_valid_appid": "Пожалуйста, введите действительный AppID",
+        "drm_missing_dep": "Отсутствует зависимость",
+        "drm_missing_dep_hint": "Пожалуйста, установите pycryptodome: pip install pycryptodome",
+        "drm_decrypt_failed": "Ошибка расшифровки",
+        "drm_download_failed": "Ошибка загрузки",
+        "drm_auth_success": "Авторизация успешна",
+        "drm_auth_failed": "Авторизация не удалась",
         "tip": "Совет",
         "recognition_success": "Успешное распознавание",
         "game_not_found": "Игра не найдена",
@@ -855,6 +998,42 @@ TEXTS = {
         "check_update_failed": "Prüfung fehlgeschlagen",
         "restart_steam_title": "Steam neu starten",
         "restart_steam_confirm_message": "Sind Sie sicher, dass Sie Steam neu starten möchten?\n\nDies wird das aktuelle Steam schließen und neu starten.",
+        "drm_page_title": "D-Verschlüsselung Autorisierung",
+        "drm_step1": "Schritt 1: Autorisierungsdatei erhalten",
+        "drm_cw_file": "CW-Datei",
+        "drm_cw_file_hint": "Lokale .cw-Datei auswählen und entschlüsseln",
+        "drm_cw_placeholder": "CW-Autorisierungsdatei auswählen",
+        "drm_browse": "Durchsuchen",
+        "drm_decrypt": "Entschlüsseln",
+        "drm_auth_code": "Autorisierungscode",
+        "drm_auth_code_hint": "CW-Datei online über Autorisierungscode herunterladen",
+        "drm_auth_code_placeholder": "Autorisierungscode eingeben",
+        "drm_download_decrypt": "Herunterladen & Entschlüsseln",
+        "drm_online_auth": "Online-Autorisierung erhalten",
+        "drm_online_auth_hint": "Externe Autorisierungs-Websites besuchen",
+        "drm_extract_title": "CW-Datei erhalten (Lokale Extraktion)",
+        "drm_extract_hint": "Benötigt Steam-Anmeldung und Spielbesitz",
+        "drm_extract_placeholder": "Spiel-AppID eingeben (muss das Spiel besitzen)",
+        "drm_gen_authcode": "Autorisierungscode generieren",
+        "drm_extract_cw": "CW lokal extrahieren",
+        "drm_info_title": "Autorisierungsinformationen",
+        "drm_valid_from": "Gültig ab",
+        "drm_valid_to": "Gültig bis",
+        "drm_step2": "Schritt 2: GL-Modus-Autorisierung (SteamTools)",
+        "drm_gl_hint": "Autorisierungsticket in SteamTools-Verzeichnis schreiben",
+        "drm_gl_btn": "Autorisieren (GL/SteamTools)",
+        "drm_log": "Protokoll",
+        "drm_nav": "D-Verschlüsselung",
+        "drm_tip_select_cw": "Bitte wählen Sie zuerst eine CW-Datei aus",
+        "drm_tip_enter_code": "Bitte geben Sie einen Autorisierungscode ein",
+        "drm_tip_decrypt_first": "Bitte entschlüsseln Sie zuerst die CW-Datei",
+        "drm_tip_valid_appid": "Bitte geben Sie eine gültige AppID ein",
+        "drm_missing_dep": "Abhängigkeit fehlt",
+        "drm_missing_dep_hint": "Bitte installieren Sie pycryptodome: pip install pycryptodome",
+        "drm_decrypt_failed": "Entschlüsselung fehlgeschlagen",
+        "drm_download_failed": "Download fehlgeschlagen",
+        "drm_auth_success": "Autorisierung erfolgreich",
+        "drm_auth_failed": "Autorisierung fehlgeschlagen",
         "tip": "Tipp",
         "recognition_success": "Erkennung erfolgreich",
         "game_not_found": "Spiel nicht gefunden",
@@ -927,6 +1106,42 @@ TEXTS = {
         "search_button": "検索",
         "add_options": "追加オプション",
         "add_all_dlc": "すべてのDLCを追加",
+        "drm_page_title": "D暗号化認証ツール",
+        "drm_step1": "ステップ1: 認証ファイルを取得",
+        "drm_cw_file": "CWファイル",
+        "drm_cw_file_hint": "ローカルの.cwファイルを選択して復号",
+        "drm_cw_placeholder": "CW認証ファイルを選択",
+        "drm_browse": "参照",
+        "drm_decrypt": "復号",
+        "drm_auth_code": "認証コード",
+        "drm_auth_code_hint": "認証コードでオンラインからCWファイルをダウンロード",
+        "drm_auth_code_placeholder": "認証コードを入力",
+        "drm_download_decrypt": "ダウンロード＆復号",
+        "drm_online_auth": "オンライン認証を取得",
+        "drm_online_auth_hint": "外部認証サイトを訪問",
+        "drm_extract_title": "CWファイルを取得（ローカル抽出）",
+        "drm_extract_hint": "Steamログインとゲーム所有権が必要",
+        "drm_extract_placeholder": "ゲームAppIDを入力（ゲームを所有している必要があります）",
+        "drm_gen_authcode": "認証コードを生成",
+        "drm_extract_cw": "CWをローカル抽出",
+        "drm_info_title": "認証情報",
+        "drm_valid_from": "有効開始日",
+        "drm_valid_to": "有効期限",
+        "drm_step2": "ステップ2: GLモード認証（SteamTools）",
+        "drm_gl_hint": "認証チケットをSteamToolsディレクトリに書き込み",
+        "drm_gl_btn": "認証（GL/SteamTools）",
+        "drm_log": "ログ",
+        "drm_nav": "D暗号化",
+        "drm_tip_select_cw": "まずCWファイルを選択してください",
+        "drm_tip_enter_code": "認証コードを入力してください",
+        "drm_tip_decrypt_first": "まずCWファイルを復号してください",
+        "drm_tip_valid_appid": "有効なAppIDを入力してください",
+        "drm_missing_dep": "依存関係がありません",
+        "drm_missing_dep_hint": "pycryptodomeをインストールしてください: pip install pycryptodome",
+        "drm_decrypt_failed": "復号失敗",
+        "drm_download_failed": "ダウンロード失敗",
+        "drm_auth_success": "認証成功",
+        "drm_auth_failed": "認証失敗",
         "patch_depot_key": "デポットキーをパッチ",
         "manifest_source": "マニフェストソース:",
         "add_game": "ゲームを追加",
@@ -1176,6 +1391,42 @@ TEXTS = {
         "check_update_failed": "檢查更新失敗",
         "restart_steam_title": "重新啟動 Steam",
         "restart_steam_confirm_message": "確定要重新啟動 Steam 嗎？\n\n這將關閉目前執行中的 Steam 並重新啟動。",
+        "drm_page_title": "D加密授權器",
+        "drm_step1": "步驟 1：取得授權檔案",
+        "drm_cw_file": "CW 檔案",
+        "drm_cw_file_hint": "選擇本機 .cw 授權檔案並解密",
+        "drm_cw_placeholder": "選擇 .cw 授權檔案",
+        "drm_browse": "瀏覽",
+        "drm_decrypt": "解密",
+        "drm_auth_code": "授權碼",
+        "drm_auth_code_hint": "透過授權碼線上取得 CW 檔案",
+        "drm_auth_code_placeholder": "輸入授權碼",
+        "drm_download_decrypt": "下載並解密",
+        "drm_online_auth": "線上取得授權",
+        "drm_online_auth_hint": "造訪外部授權網站",
+        "drm_extract_title": "取得 CW 檔案（本機提取）",
+        "drm_extract_hint": "需要已登入 Steam 且擁有該遊戲",
+        "drm_extract_placeholder": "輸入遊戲 AppID（目前帳號必須擁有該遊戲）",
+        "drm_gen_authcode": "產生授權碼",
+        "drm_extract_cw": "本機提取 CW",
+        "drm_info_title": "授權資訊",
+        "drm_valid_from": "生效時間",
+        "drm_valid_to": "失效時間",
+        "drm_step2": "步驟 2：GL 模式授權（SteamTools）",
+        "drm_gl_hint": "將授權 ticket 寫入 SteamTools 目錄",
+        "drm_gl_btn": "開始授權 (GL/SteamTools)",
+        "drm_log": "紀錄",
+        "drm_nav": "D加密",
+        "drm_tip_select_cw": "請先選擇 CW 檔案",
+        "drm_tip_enter_code": "請輸入授權碼",
+        "drm_tip_decrypt_first": "請先解密 CW 檔案",
+        "drm_tip_valid_appid": "請輸入有效的 AppID",
+        "drm_missing_dep": "缺少依賴",
+        "drm_missing_dep_hint": "請安裝 pycryptodome: pip install pycryptodome",
+        "drm_decrypt_failed": "解密失敗",
+        "drm_download_failed": "下載失敗",
+        "drm_auth_success": "授權成功",
+        "drm_auth_failed": "授權失敗",
         
         # 缺失的翻譯鍵
         "tip": "提示",
@@ -1431,6 +1682,7 @@ class GameCard(CardWidget):
             self.toggleButton = TransparentToolButton(FluentIcon.UPDATE, self)
             self.toggleButton.setFixedSize(32, 32)
             self.toggleButton.setToolTip(tr("toggle_version_mode"))
+            self.toggleButton.installEventFilter(ToolTipFilter(self.toggleButton, showDelay=150, position=ToolTipPosition.TOP))
             self.toggleButton.clicked.connect(self.on_toggle_clicked)
         
         # 设置布局
@@ -1588,6 +1840,7 @@ class GameCardGrid(CardWidget):
             self.toggleButton = TransparentToolButton(FluentIcon.UPDATE, self)
             self.toggleButton.setFixedSize(32, 32)
             self.toggleButton.setToolTip(tr("toggle_version_mode"))
+            self.toggleButton.installEventFilter(ToolTipFilter(self.toggleButton, showDelay=150, position=ToolTipPosition.TOP))
             self.toggleButton.clicked.connect(self.on_toggle_clicked)
         
         # 设置布局
@@ -2406,6 +2659,12 @@ class HomePage(ScrollArea):
                     is_fixed = '固定版本' in message
                     card.update_mode_label(is_fixed)
                     break
+            
+            # 如果切换到了固定版本，检查是否需要补全清单文件
+            message = result.get('message', '')
+            if '固定版本' in message:
+                # 延迟一点执行，让切换完成的提示先显示
+                QTimer.singleShot(500, lambda: self._check_and_complete_manifest_after_toggle(appid))
         else:
             InfoBar.error(
                 title="切换失败",
@@ -2413,6 +2672,91 @@ class HomePage(ScrollArea):
                 parent=self,
                 position=InfoBarPosition.TOP
             )
+    
+    def _check_and_complete_manifest_after_toggle(self, appid):
+        """切换固定版本后，检查并补全清单文件"""
+        async def _check_and_complete():
+            async with CaiBackend() as backend:
+                await backend.initialize()
+                
+                # 检查本地是否已有 manifest 文件
+                search_paths = [
+                    backend.steam_path / 'config' / 'depotcache',
+                    backend.steam_path / 'depotcache'
+                ]
+                
+                # 获取该 AppID 的所有 depot IDs
+                depots_info = await backend.get_depots_safe(str(appid))
+                if not depots_info:
+                    backend.log.info(f"[切换固定版本] 无法获取 AppID {appid} 的 depot 信息，跳过补全")
+                    return None
+                
+                depot_ids = [str(d[0]) for d in depots_info if d[0]]
+                
+                # 检查是否已存在 manifest 文件
+                existing_count = 0
+                for depot_id in depot_ids:
+                    for search_dir in search_paths:
+                        if not search_dir.exists():
+                            continue
+                        candidates = list(search_dir.glob(f"{depot_id}_*.manifest"))
+                        if candidates:
+                            existing_count += 1
+                            break
+                
+                # 如果已存在部分 manifest，认为不需要补全
+                if existing_count >= len(depot_ids):
+                    backend.log.info(f"[切换固定版本] AppID {appid} 已有全部 manifest 文件，无需补全")
+                    return None
+                
+                # 需要补全清单文件
+                backend.log.info(f"[切换固定版本] AppID {appid} 缺少 manifest 文件 ({existing_count}/{len(depot_ids)})，开始补全...")
+                
+                # 调用补全清单文件
+                post_result = await backend.complete_manifest_files(str(appid))
+                return post_result
+        
+        def on_complete_result(result):
+            if result is None:
+                return  # 不需要补全或获取失败
+            
+            if result.get('success'):
+                downloaded = result.get('downloaded', 0)
+                total = result.get('total', 0)
+                InfoBar.success(
+                    title="补全完成",
+                    content=f"AppID {appid} 补全完成：{downloaded}/{total}",
+                    parent=self,
+                    position=InfoBarPosition.TOP,
+                    duration=3000
+                )
+            else:
+                msg = result.get('message', '补全失败')
+                InfoBar.warning(
+                    title="补全清单",
+                    content=f"AppID {appid} {msg}",
+                    parent=self,
+                    position=InfoBarPosition.TOP,
+                    duration=4000
+                )
+        
+        def on_complete_error(error):
+            InfoBar.error(
+                title="补全失败",
+                content=f"AppID {appid} 补全清单时出错: {error}",
+                parent=self,
+                position=InfoBarPosition.TOP,
+                duration=4000
+            )
+        
+        # 启动补全任务
+        _replace_worker(getattr(self, '_manifest_complete_worker', None))
+        worker = AsyncWorker(_check_and_complete())
+        self._manifest_complete_worker = worker
+        worker.result_ready.connect(on_complete_result)
+        worker.error.connect(on_complete_error)
+        worker.finished.connect(worker.deleteLater)
+        worker.start()
     
     @pyqtSlot(str)
     def on_toggle_st_version_error(self, error):
@@ -2594,6 +2938,7 @@ class SearchResultCard(CardWidget):
         self.selectButton = TransparentToolButton(FluentIcon.CLOUD_DOWNLOAD, self)
         self.selectButton.setFixedSize(32, 32)
         self.selectButton.setToolTip("入库")
+        self.selectButton.installEventFilter(ToolTipFilter(self.selectButton, showDelay=150, position=ToolTipPosition.TOP))
         self.selectButton.clicked.connect(self.on_select_clicked)
 
         # 更多按钮
@@ -2695,6 +3040,7 @@ class SearchResultCardGrid(CardWidget):
         self.selectButton = TransparentToolButton(FluentIcon.CLOUD_DOWNLOAD, self)
         self.selectButton.setFixedSize(32, 32)
         self.selectButton.setToolTip("入库")
+        self.selectButton.installEventFilter(ToolTipFilter(self.selectButton, showDelay=150, position=ToolTipPosition.TOP))
         self.selectButton.clicked.connect(self.on_select_clicked)
 
         # 更多按钮
@@ -2826,7 +3172,7 @@ class SearchPage(ScrollArea):
             "SteamAutoCracks V2",
             "SteamAutoCracks V1",
             tr("sac-other"),
-            "cysaw",
+            "Cysaw",
             "Walftech",
             "Sudama",
             "清单不求人",
@@ -3606,11 +3952,12 @@ class SearchPage(ScrollArea):
             2: "steamautocracks_v1",
             3: "sac-other",
             4: "cysaw",
-            5: "walftech",
-            6: "sudama",
-            7: "buqiuren",
-            8: "MHub",
-            9: "github_auiowu",
+            5: "gmrc",
+            6: "walftech",
+            7: "sudama",
+            8: "buqiuren",
+            9: "MHub",
+            10: "github_auiowu",
         }
         tool_type = index_to_source.get(self.manifest_source_combo.currentIndex(), "auto")
         
@@ -3644,6 +3991,7 @@ class SearchPage(ScrollArea):
                         "steamautocracks_v1",
                         "sac-other",
                         "cysaw",
+                        "gmrc",
                         "walftech",
                         "sudama",
                         "buqiuren",
@@ -3657,8 +4005,10 @@ class SearchPage(ScrollArea):
                                 use_st_auto_update, add_all_dlc, patch_depot_key
                             )
                             if ok:
-                                backend.log.info(f"[自动选择] 源 {src} 成功")
-                                return True
+                                backend.log.info(f"[自动选择] 源 {src} 成功，开始补全清单文件...")
+                                # 主入库成功后，补全清单文件
+                                post_result = await backend.complete_manifest_files(str(appid))
+                                return bool(post_result.get("success", True))
                         except Exception as e:
                             backend.log.warning(f"[自动选择] 源 {src} 失败: {e}")
                     return False
@@ -3667,7 +4017,7 @@ class SearchPage(ScrollArea):
                 github_repo_map = {
                     "github_auiowu": "Auiowu/ManifestAutoUpdate",
                 }
-                zip_sources = ["cysaw", "sac-other", "walftech", "steamautocracks_v2", "steamautocracks_v1", "sudama", "buqiuren", "MHub"]
+                zip_sources = ["cysaw", "gmrc", "sac-other", "walftech", "steamautocracks_v2", "steamautocracks_v1", "sudama", "buqiuren", "MHub"]
                 if tool_type_actual in zip_sources:
                     success = await backend.process_zip_source(
                         appid, tool_type_actual, unlocker_type,
@@ -3679,6 +4029,12 @@ class SearchPage(ScrollArea):
                         appid, repo, unlocker_type,
                         use_st_auto_update, add_all_dlc, patch_depot_key
                     )
+                
+                # 主入库成功后，补全清单文件
+                if success:
+                    backend.log.info(f"主入库成功，开始补全清单文件...")
+                    post_result = await backend.complete_manifest_files(str(appid))
+                    return bool(post_result.get("success", True))
                 
                 return success
         
@@ -4120,6 +4476,343 @@ class LauncherPage(ScrollArea):
             InfoBar.error(title=tr("launcher_error"), content=str(e), parent=self, position=InfoBarPosition.TOP)
 
 
+class DrmPage(ScrollArea):
+    """D加密授权页面"""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setObjectName("drmPage")
+        self.setWidgetResizable(True)
+        self._cw_result = None
+
+        container = QWidget()
+        container.setObjectName("drmContainer")
+        self.setWidget(container)
+        self.setStyleSheet("DrmPage { background: transparent; }")
+        container.setStyleSheet("QWidget#drmContainer { background: transparent; }")
+
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(30, 30, 30, 30)
+        layout.setSpacing(16)
+
+        layout.addWidget(SubtitleLabel(tr("drm_page_title"), self))
+
+        # ── 步骤1：获取授权文件 ──
+        step1 = GroupHeaderCardWidget(self)
+        step1.setTitle(tr("drm_step1"))
+        step1.setBorderRadius(8)
+
+        # 选择 CW 文件
+        file_row = QWidget()
+        file_row_layout = QHBoxLayout(file_row)
+        file_row_layout.setContentsMargins(0, 0, 0, 0)
+        self.cw_path_edit = LineEdit()
+        self.cw_path_edit.setPlaceholderText(tr("drm_cw_placeholder"))
+        self.cw_path_edit.setReadOnly(True)
+        browse_btn = PushButton(tr("drm_browse"))
+        browse_btn.setFixedWidth(70)
+        browse_btn.clicked.connect(self._browse_cw)
+        decrypt_btn = PrimaryPushButton(tr("drm_decrypt"))
+        decrypt_btn.setFixedWidth(70)
+        decrypt_btn.clicked.connect(self._decrypt_cw)
+        file_row_layout.addWidget(self.cw_path_edit)
+        file_row_layout.addWidget(browse_btn)
+        file_row_layout.addWidget(decrypt_btn)
+        step1.addGroup(FluentIcon.DOCUMENT, tr("drm_cw_file"), tr("drm_cw_file_hint"), file_row)
+
+        # 授权码下载
+        code_row = QWidget()
+        code_row_layout = QHBoxLayout(code_row)
+        code_row_layout.setContentsMargins(0, 0, 0, 0)
+        self.auth_code_edit = LineEdit()
+        self.auth_code_edit.setPlaceholderText(tr("drm_auth_code_placeholder"))
+        dl_btn = PrimaryPushButton(tr("drm_download_decrypt"))
+        dl_btn.setFixedWidth(100)
+        dl_btn.clicked.connect(self._download_by_code)
+        code_row_layout.addWidget(self.auth_code_edit)
+        code_row_layout.addWidget(dl_btn)
+        step1.addGroup(FluentIcon.CLOUD_DOWNLOAD, tr("drm_auth_code"), tr("drm_auth_code_hint"), code_row)
+
+        # 授权网站链接
+        links_row = QWidget()
+        links_layout = QHBoxLayout(links_row)
+        links_layout.setContentsMargins(0, 0, 0, 0)
+        links_layout.addWidget(HyperlinkButton("https://drm.steam.run", "stool 授权网站"))
+        links_layout.addWidget(HyperlinkButton("https://steam.sakuranoyuki.de5.net", "四星授权网站"))
+        links_layout.addStretch(1)
+        step1.addGroup(FluentIcon.LINK, tr("drm_online_auth"), tr("drm_online_auth_hint"), links_row)
+
+        layout.addWidget(step1)
+
+        # ── 获取 CW 文件（本地提取）──
+        extract_card = GroupHeaderCardWidget(self)
+        extract_card.setTitle(tr("drm_extract_title"))
+        extract_card.setBorderRadius(8)
+
+        extract_row = QWidget()
+        extract_row_layout = QHBoxLayout(extract_row)
+        extract_row_layout.setContentsMargins(0, 0, 0, 0)
+        self.extract_appid_edit = LineEdit()
+        self.extract_appid_edit.setPlaceholderText(tr("drm_extract_placeholder"))
+        extract_authcode_btn = PushButton(tr("drm_gen_authcode"))
+        extract_authcode_btn.setFixedWidth(100)
+        extract_authcode_btn.clicked.connect(self._extract_auth_code)
+        extract_cw_btn = PrimaryPushButton(tr("drm_extract_cw"))
+        extract_cw_btn.setFixedWidth(110)
+        extract_cw_btn.clicked.connect(self._extract_cw_file)
+        extract_row_layout.addWidget(self.extract_appid_edit)
+        extract_row_layout.addWidget(extract_authcode_btn)
+        extract_row_layout.addWidget(extract_cw_btn)
+        extract_card.addGroup(FluentIcon.CERTIFICATE, tr("drm_extract_cw"), tr("drm_extract_hint"), extract_row)
+        layout.addWidget(extract_card)
+
+        # ── 授权信息展示 ──
+        self.info_card = GroupHeaderCardWidget(self)
+        self.info_card.setTitle(tr("drm_info_title"))
+        self.info_card.setBorderRadius(8)
+        self.info_card.hide()
+
+        self.info_appid = BodyLabel("-")
+        self.info_steamid = BodyLabel("-")
+        self.info_start = BodyLabel("-")
+        self.info_end = BodyLabel("-")
+        self.info_card.addGroup(FluentIcon.TAG, "AppID", "", self.info_appid)
+        self.info_card.addGroup(FluentIcon.PEOPLE, "SteamID", "", self.info_steamid)
+        self.info_card.addGroup(FluentIcon.CALENDAR, tr("drm_valid_from"), "", self.info_start)
+        self.info_card.addGroup(FluentIcon.CALENDAR, tr("drm_valid_to"), "", self.info_end)
+        layout.addWidget(self.info_card)
+
+        # ── 步骤2：GL 模式授权（写入 SteamTools）──
+        step2 = GroupHeaderCardWidget(self)
+        step2.setTitle(tr("drm_step2"))
+        step2.setBorderRadius(8)
+
+        self.gl_auth_btn = PrimaryPushButton(tr("drm_gl_btn"))
+        self.gl_auth_btn.setEnabled(False)
+        self.gl_auth_btn.clicked.connect(self._authorize_gl)
+        step2.addGroup(FluentIcon.CERTIFICATE, "GL", tr("drm_gl_hint"), self.gl_auth_btn)
+        layout.addWidget(step2)
+
+        # ── 日志 ──
+        log_card = CardWidget(self)
+        log_layout = QVBoxLayout(log_card)
+        log_layout.setContentsMargins(16, 12, 16, 12)
+        log_layout.setSpacing(6)
+        log_header = QHBoxLayout()
+        log_header.addWidget(BodyLabel(tr("drm_log")))
+        log_header.addStretch(1)
+        clear_btn = TransparentToolButton(FluentIcon.DELETE, log_card)
+        clear_btn.clicked.connect(lambda: self.drm_log.clear())
+        log_header.addWidget(clear_btn)
+        log_layout.addLayout(log_header)
+        self.drm_log = TextEdit(log_card)
+        self.drm_log.setReadOnly(True)
+        self.drm_log.setFixedHeight(180)
+        self.drm_log.setStyleSheet(
+            "TextEdit { background: rgba(0,0,0,0.12); border-radius: 6px; "
+            "font-family: Consolas, monospace; font-size: 12px; padding: 8px; }"
+        )
+        log_layout.addWidget(self.drm_log)
+        layout.addWidget(log_card)
+        layout.addStretch(1)
+
+    def _log(self, msg: str):
+        self.drm_log.append(msg)
+        sb = self.drm_log.verticalScrollBar()
+        sb.setValue(sb.maximum())
+
+    def _browse_cw(self):
+        from PyQt6.QtWidgets import QFileDialog
+        path, _ = QFileDialog.getOpenFileName(self, tr("drm_cw_file"), "", "CW Files (*.cw);;All Files (*)")
+        if path:
+            self.cw_path_edit.setText(path)
+
+    def _decrypt_cw(self):
+        path = self.cw_path_edit.text().strip()
+        if not path:
+            InfoBar.warning(title=tr("tip"), content=tr("drm_tip_select_cw"), parent=self, position=InfoBarPosition.TOP, duration=2000)
+            return
+        try:
+            from authorizer_backend import decrypt_cw_file, ts_to_str
+            result = decrypt_cw_file(path)
+            self._cw_result = result
+            self._show_cw_info(result)
+            self._log(f"解密成功！AppID: {result.appid}, SteamID: {result.steam_id}")
+        except ImportError:
+            InfoBar.error(title=tr("drm_missing_dep"), content=tr("drm_missing_dep_hint"), parent=self, position=InfoBarPosition.TOP)
+        except Exception as e:
+            self._log(f"解密失败: {e}")
+            InfoBar.error(title=tr("drm_decrypt_failed"), content=str(e), parent=self, position=InfoBarPosition.TOP)
+
+    def _download_by_code(self):
+        code = self.auth_code_edit.text().strip()
+        if not code:
+            InfoBar.warning(title=tr("tip"), content=tr("drm_tip_enter_code"), parent=self, position=InfoBarPosition.TOP, duration=2000)
+            return
+
+        async def _dl():
+            async with CaiBackend() as backend:
+                from authorizer_backend import AuthorizerBackend, decrypt_cw_file, ts_to_str
+                async with AuthorizerBackend(backend.steam_path, backend.log) as auth:
+                    ok, msg, tmp_path = await auth.download_cw_by_auth_code(code)
+                    if ok and tmp_path:
+                        result = decrypt_cw_file(tmp_path)
+                        try: tmp_path.unlink()
+                        except: pass
+                        return result
+                    raise Exception(msg)
+
+        _replace_worker(getattr(self, '_drm_worker', None))
+        worker = AsyncWorker(_dl())
+        self._drm_worker = worker
+
+        def on_result(result):
+            self._drm_worker = None
+            self._cw_result = result
+            self._show_cw_info(result)
+            self._log(f"下载解密成功！AppID: {result.appid}")
+
+        def on_error(err):
+            self._drm_worker = None
+            self._log(f"下载失败: {err}")
+            InfoBar.error(title=tr("drm_download_failed"), content=err, parent=self, position=InfoBarPosition.TOP)
+
+        worker.result_ready.connect(on_result)
+        worker.error.connect(on_error)
+        worker.finished.connect(worker.deleteLater)
+        worker.start()
+
+    def _show_cw_info(self, result):
+        from authorizer_backend import ts_to_str
+        self.info_appid.setText(str(result.appid))
+        self.info_steamid.setText(str(result.steam_id))
+        self.info_start.setText(ts_to_str(result.timeout_start))
+        self.info_end.setText(ts_to_str(result.timeout_end))
+        self.info_card.show()
+        self.gl_auth_btn.setEnabled(True)
+
+    def _authorize_gl(self):
+        if not self._cw_result:
+            InfoBar.warning(title=tr("tip"), content=tr("drm_tip_decrypt_first"), parent=self, position=InfoBarPosition.TOP, duration=2000)
+            return
+
+        async def _auth():
+            async with CaiBackend() as backend:
+                await backend.initialize()
+                from authorizer_backend import AuthorizerBackend
+                async with AuthorizerBackend(backend.steam_path, backend.log) as auth:
+                    ok, msg = await auth.authorize_gl_mode(self._cw_result)
+                    return ok, msg
+
+        _replace_worker(getattr(self, '_drm_worker', None))
+        self.gl_auth_btn.setEnabled(False)
+        worker = AsyncWorker(_auth())
+        self._drm_worker = worker
+
+        def on_result(res):
+            self._drm_worker = None
+            self.gl_auth_btn.setEnabled(True)
+            ok, msg = res
+            self._log(msg)
+            if ok:
+                InfoBar.success(title=tr("drm_auth_success"), content=msg, parent=self, position=InfoBarPosition.TOP, duration=3000)
+            else:
+                InfoBar.error(title=tr("drm_auth_failed"), content=msg, parent=self, position=InfoBarPosition.TOP)
+
+        def on_error(err):
+            self._drm_worker = None
+            self.gl_auth_btn.setEnabled(True)
+            self._log(f"授权失败: {err}")
+            InfoBar.error(title=tr("drm_auth_failed"), content=err, parent=self, position=InfoBarPosition.TOP)
+
+        worker.result_ready.connect(on_result)
+        worker.error.connect(on_error)
+        worker.finished.connect(worker.deleteLater)
+        worker.start()
+
+    def _extract_auth_code(self):
+        app_id = self.extract_appid_edit.text().strip()
+        if not app_id or not app_id.isdigit():
+            InfoBar.warning(title=tr("tip"), content=tr("drm_tip_valid_appid"), parent=self, position=InfoBarPosition.TOP, duration=2000)
+            return
+
+        def _run():
+            try:
+                from cw_extractor_core import LocalExtractor
+                extractor = LocalExtractor(int(app_id), self._log)
+                return extractor.extract_to_authcode()
+            except ImportError:
+                return {"success": False, "message": "缺少 cw_extractor_core 模块"}
+            except Exception as e:
+                return {"success": False, "message": str(e)}
+
+        import concurrent.futures
+        self._log(f"开始提取 AppID {app_id} 的授权码...")
+
+        def _do():
+            with concurrent.futures.ThreadPoolExecutor() as ex:
+                return ex.submit(_run).result()
+
+        _replace_worker(getattr(self, '_drm_worker', None))
+        worker = AsyncWorker(_do())  # 包一层 async 壳
+        self._drm_worker = worker
+
+        # 直接用线程跑，不走 asyncio
+        import threading
+        def _thread_run():
+            result = _run()
+            if result.get("success"):
+                auth_code = result.get("auth_code", "")
+                self._log(f"授权码: {auth_code}")
+                self._log(">>> 授权码已生成，请复制上方授权码 <<<")
+                try:
+                    from PyQt6.QtWidgets import QApplication
+                    QApplication.clipboard().setText(auth_code)
+                    self._log(">>> 已自动复制到剪贴板 <<<")
+                except Exception:
+                    pass
+            else:
+                self._log(f"提取失败: {result.get('message', '未知错误')}")
+
+        t = threading.Thread(target=_thread_run, daemon=True)
+        t.start()
+        self._drm_worker = None  # 线程方式不用 worker
+
+    def _extract_cw_file(self):
+        app_id = self.extract_appid_edit.text().strip()
+        if not app_id or not app_id.isdigit():
+            InfoBar.warning(title=tr("tip"), content=tr("drm_tip_valid_appid"), parent=self, position=InfoBarPosition.TOP, duration=2000)
+            return
+
+        from PyQt6.QtWidgets import QFileDialog
+        output_dir, _ = QFileDialog.getSaveFileName(self, "保存 CW 文件", f"{app_id}.cw", "CW Files (*.cw)")
+        if not output_dir:
+            return
+
+        import threading
+        self._log(f"开始生成 AppID {app_id} 的 CW 文件...")
+
+        def _thread_run():
+            try:
+                from cw_extractor_core import LocalExtractor, HAVE_PYCRYPTODOME
+                if not HAVE_PYCRYPTODOME:
+                    self._log("错误: 需要安装 pycryptodome: pip install pycryptodome")
+                    return
+                extractor = LocalExtractor(int(app_id), self._log)
+                result = extractor.extract_to_cw_file(output_dir)
+                if result.get("success"):
+                    self._log(f"CW 文件已生成: {result.get('file_path')}")
+                    self._log(f"包含 {result.get('dlc_count', 0)} 个 DLC")
+                else:
+                    self._log(f"生成失败: {result.get('message', '未知错误')}")
+            except ImportError:
+                self._log("错误: 缺少 cw_extractor_core 模块")
+            except Exception as e:
+                self._log(f"发生错误: {e}")
+
+        threading.Thread(target=_thread_run, daemon=True).start()
+
+
 class SettingsPage(ScrollArea):
     """设置页面"""
     
@@ -4241,7 +4934,7 @@ class SettingsPage(ScrollArea):
 
         self.st_mode_combo = ComboBox()
         self.st_mode_combo.addItems([tr("auto_update"), tr("st_fixed_enable")])
-        self.st_mode_combo.setCurrentIndex(0)
+        self.st_mode_combo.setCurrentIndex(1)  # 默认选中固定版本
         self.st_mode_combo.setFixedWidth(180)
         self.st_mode_combo.setToolTip(tr("st_fixed_tooltip"))
         app_config_card.addGroup(FluentIcon.SETTING, tr("st_settings"), tr("st_settings_hint"), self.st_mode_combo)
@@ -4570,29 +5263,17 @@ class SettingsPage(ScrollArea):
             self.check_update_btn.setText(tr("check_update"))
             has_update, info = result
             if has_update:
-                from qfluentwidgets import MessageBoxBase, TitleLabel, BodyLabel
-                from PyQt6.QtWidgets import QVBoxLayout
-                from PyQt6.QtCore import Qt
-
-                class UpdateDialog(MessageBoxBase):
-                    def __init__(self, parent=None):
-                        super().__init__(parent)
-                        self.titleLabel = TitleLabel(tr("update_available"), self)
-                        body = BodyLabel(
-                            f"{tr('current_version')}: {info.get('current_version', '')}\n"
-                            f"{tr('latest_version')}: {info.get('latest_version', '')}\n\n"
-                            f"{info.get('release_body', '') or tr('no_release_notes')}",
-                            self
-                        )
-                        body.setWordWrap(True)
-                        self.viewLayout.addWidget(self.titleLabel)
-                        self.viewLayout.addWidget(body)
-                        self.yesButton.setText(tr("go_to_download"))
-                        self.cancelButton.setText(tr("cancel"))
-                        self.widget.setMinimumWidth(420)
-
-                dialog = UpdateDialog(self.window())
-                if dialog.exec():
+                # 使用非模态方式显示更新提示，避免卡死
+                msg = MessageBox(
+                    tr("update_available"),
+                    f"{tr('current_version')}: {info.get('current_version', '')}\n"
+                    f"{tr('latest_version')}: {info.get('latest_version', '')}\n\n"
+                    f"{info.get('release_body', '') or tr('no_release_notes')}",
+                    self.window()
+                )
+                msg.yesButton.setText(tr("go_to_download"))
+                msg.cancelButton.setText(tr("cancel"))
+                if msg.exec():
                     QDesktopServices.openUrl(QUrl(info.get('release_url', f"https://github.com/{GITHUB_REPO}/releases")))
             else:
                 InfoBar.success(
@@ -4846,7 +5527,7 @@ class SettingsPage(ScrollArea):
             
             # 加载SteamTools版本模式设置
             if self.st_mode_combo:
-                is_fixed = config.get("ST_Fixed_Version", False)
+                is_fixed = config.get("ST_Fixed_Version", True)  # 默认固定版本
                 self.st_mode_combo.setCurrentIndex(1 if is_fixed else 0)
             
             # 加载DLC超时时间
@@ -5135,6 +5816,7 @@ class MainWindow(MSFluentWindow):
         self.home_page = HomePage(self)
         self.search_page = SearchPage(self)
         self.launcher_page = LauncherPage(self)
+        self.drm_page = DrmPage(self)
         self.settings_page = SettingsPage(self)
         
         # 添加导航项
@@ -5154,6 +5836,12 @@ class MainWindow(MSFluentWindow):
             self.launcher_page,
             FluentIcon.GAME,
             tr("launcher")
+        )
+
+        self.addSubInterface(
+            self.drm_page,
+            FluentIcon.CERTIFICATE,
+            tr("drm_nav")
         )
         
         # 在导航栏底部添加设置
@@ -5416,11 +6104,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
-
-
-

@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Tuple, Any, List, Dict, Literal
 from urllib.parse import quote
 
-CURRENT_VERSION = "1.9.8"  # 当前版本号
+CURRENT_VERSION = "2.1"  # 当前版本号
 GITHUB_REPO = "zhouchentao666/Fluent-Install"
 
 # --- LOGGING SETUP ---
@@ -58,7 +58,7 @@ DEFAULT_CONFIG = {
         "zip": []
     },
     "DLCTimeout": 60,           # DLC 入库/联网超时时间（秒）
-    "ST_Fixed_Version": False,  # SteamTools固定版本模式
+    "ST_Fixed_Version": True,   # SteamTools固定版本模式（默认启用）
     "QA1": "温馨提示: Github_Personal_Token(个人访问令牌)可在Github设置的最底下开发者选项中找到, 详情请看教程。",
     "QA2": "Force_Unlocker: 强制指定解锁工具, 填入 'steamtools' 或 'greenluma'。留空则自动检测。",
     "QA3": "Custom_Repos: 自定义清单库配置。github数组用于添加GitHub仓库，zip数组用于添加ZIP清单库。",
@@ -880,71 +880,7 @@ class CaiBackend:
                             found_count += 1
 
                     if found_count == 0:
-                        # 本地没有 manifest，自动尝试多个源下载
-                        app_id_match = re.search(r'addappid\(\s*(\d+)\s*\)', content)
-                        app_id = app_id_match.group(1) if app_id_match else None
-                        if not app_id:
-                            return {"success": False, "message": "未在本地找到 Manifest 文件，且无法识别 AppID"}
-
-                        self.log.info(f"本地无 Manifest，尝试自动下载 AppID {app_id} 的清单...")
-                        # 只用能把 manifest 文件写入 depotcache 的源（不用 steamautocracks_v2，它仅密钥且会覆盖 lua）
-                        download_sources = [
-                            "sac-other",
-                            "cysaw",
-                            "MHub",
-                            "walftech",
-                            "sudama",
-                        ]
-                        downloaded = False
-                        for src in download_sources:
-                            self.log.info(f"尝试从 {src} 下载清单...")
-                            try:
-                                ok = await self.process_zip_source(
-                                    app_id, src, "steamtools",
-                                    use_st_auto_update=False,
-                                    add_all_dlc=False, patch_depot_key=False
-                                )
-                                if ok:
-                                    self.log.info(f"从 {src} 下载清单成功")
-                                    downloaded = True
-                                    break
-                            except Exception as e:
-                                self.log.warning(f"{src} 下载失败: {e}")
-
-                        if not downloaded:
-                            return {"success": False, "message": "自动下载清单失败，请手动入库后再切换固定版本"}
-
-                        # 下载成功后重新读取 lua 文件（process_zip_source 已写入 setManifestid）
-                        async with aiofiles.open(file_path, 'r', encoding='utf-8') as f:
-                            content = await f.read()
-                        is_now_fixed = bool(re.search(r'^\s*setManifestid\(', content, re.MULTILINE))
-                        if is_now_fixed:
-                            return {"success": True, "message": f"已自动下载清单并切换为固定版本"}
-                        # 如果 lua 被重写但没有 setManifestid（自动更新模式写入），再扫一次 depotcache
-                        for depot_id in depot_ids:
-                            found_manifest_id = None
-                            for search_dir in search_paths:
-                                if not search_dir.exists():
-                                    continue
-                                candidates = list(search_dir.glob(f"{depot_id}_*.manifest"))
-                                if candidates:
-                                    m = re.match(rf"{depot_id}_(\d+)\.manifest", candidates[0].name)
-                                    if m:
-                                        found_manifest_id = m.group(1)
-                                        break
-                            if found_manifest_id:
-                                manifest_lines.append(f'setManifestid({depot_id}, "{found_manifest_id}")')
-                                found_count += 1
-
-                        if found_count == 0:
-                            return {"success": False, "message": "清单已下载但无法匹配 Depot，请重试"}
-
-                        new_content = content.rstrip() + "\n\n-- Fixed Manifests (Generated)\n" + "\n".join(manifest_lines) + "\n"
-                        action_msg = f"已自动下载清单并切换为固定版本 (匹配到 {found_count} 个文件)"
-                        async with aiofiles.open(file_path, 'w', encoding='utf-8') as f:
-                            await f.write(new_content)
-                        self.log.info(f"ST文件 {filename} 版本切换成功: {action_msg}")
-                        return {"success": True, "message": action_msg}
+                        return {"success": False, "message": "未在本地找到对应 Manifest 文件，无法固定版本"}
 
                     # 在文件末尾添加固定版本的manifest配置
                     new_content = content.rstrip() + "\n\n-- Fixed Manifests (Generated)\n" + "\n".join(manifest_lines) + "\n"
@@ -978,7 +914,7 @@ class CaiBackend:
                 self.log.info(f"已从 steamtools.lua 移除 AppID {appid} 的解锁条目。")
         except Exception as e:
             self.log.error(f"修改 steamtools.lua 以删除 AppID {appid} 时失败: {e}")
-            raise # 重新抛出异常，让上层捕获
+            # 不再抛出异常，避免中断整个删除过程
             
     # --- END OF File Manager Methods ---
 
@@ -1177,9 +1113,15 @@ class CaiBackend:
         return {}
 
     async def _get_app_info_via_token(self, appid: str, token: str) -> Dict | None:
+        # 延迟导入 steam 模块，避免循环依赖
+        try:
+            from steam.client import SteamClient
+        except ImportError:
+            self.log.error("steam 模块未安装，无法获取 App 信息")
+            return None
+
         def _fetch_task():
             try:
-                from steam.client import SteamClient
                 client = SteamClient()
                 if client.anonymous_login() != 1:
                     return None
@@ -1968,6 +1910,8 @@ class CaiBackend:
                 zip_path.unlink(missing_ok=True)
             if extract_path.exists():
                 shutil.rmtree(extract_path, ignore_errors=True)
+
+
 
     async def _process_mhub_manifest(self, app_id: str, unlocker_type: str, use_st_auto_update: bool, add_all_dlc: bool, patch_depot_key: bool) -> bool:
         """处理 MHub 清单下载（steamhub.156354.xyz）"""
@@ -2851,6 +2795,13 @@ class CaiBackend:
                             line = f'setManifestid({match.group(1)}, "{match.group(2)}")\n'
                             if use_st_auto_update: await lua_file.write('--' + line)
                             else: await lua_file.write(line)
+                
+                # 复制manifest文件到depotcache目录
+                steam_depot_path = self.steam_path / 'depotcache'
+                for f in manifest_files:
+                    shutil.copy2(f, steam_depot_path / f.name)
+                    self.log.info(f'已复制清单: {f.name}')
+                
                 self.log.info(f"已为 SteamTools 生成解锁文件: {lua_filename}")
 
                 if add_all_dlc:
@@ -2938,6 +2889,7 @@ class CaiBackend:
         # 特殊处理 MHub：先获取 token，再下载
         if tool_type == "MHub":
             return await self._process_mhub_manifest(app_id, unlocker_type, use_st_auto_update, add_all_dlc, patch_depot_key)
+
         if tool_type == "buqiuren":
             return await self.process_buqiuren_manifest(app_id)
             
@@ -3329,3 +3281,340 @@ print("OK" if result["success"] else result.get("error","fail"))
             return {"success": ret > 32}
         except Exception as e:
             return {"success": False, "error": str(e)}
+
+    async def _update_lua_for_fixed_version(self, app_id: str, depots: List[Dict]):
+        """在固定版本模式下，更新 lua 文件添加 setManifestid 行"""
+        try:
+            if not self.steam_path:
+                return
+            
+            lua_filename = f"{app_id}.lua"
+            lua_path = self.steam_path / 'config' / 'stplug-in' / lua_filename
+            
+            # 如果 lua 文件不存在，跳过
+            if not lua_path.exists():
+                self.log.info(f"[固定版本] lua 文件不存在，跳过: {lua_filename}")
+                return
+            
+            # 读取现有内容
+            async with aiofiles.open(lua_path, 'r', encoding='utf-8') as f:
+                content = await f.read()
+            
+            # 检查是否已经是固定版本模式
+            is_currently_fixed = bool(re.search(r'^\s*setManifestid\(', content, re.MULTILINE))
+            
+            # 生成新的 setManifestid 行
+            manifest_lines = []
+            for depot in depots:
+                depot_id = str(depot.get('depotid', '')).strip()
+                manifest_id = str(depot.get('manifestid', '')).strip()
+                if depot_id.isdigit() and manifest_id:
+                    manifest_lines.append(f'setManifestid({depot_id}, "{manifest_id}")')
+            
+            if not manifest_lines:
+                self.log.warning(f"[固定版本] 没有有效的 manifest 配置可添加")
+                return
+            
+            if is_currently_fixed:
+                # 已经是固定版本，替换现有的 setManifestid 行
+                # 先移除旧的 setManifestid 行（包括注释掉的）
+                content = re.sub(r'^\s*--?\s*setManifestid\([^\n]*\n', '', content, flags=re.MULTILINE)
+                self.log.info(f"[固定版本] 更新现有 lua 文件的 setManifestid 配置: {lua_filename}")
+            else:
+                # 从自动更新模式切换到固定版本
+                # 注释掉现有的 setManifestid 行（如果有的话）
+                content = re.sub(r'(^\s*)setManifestid\(', r'\1--setManifestid(', content, flags=re.MULTILINE)
+                self.log.info(f"[固定版本] 为 lua 文件添加 setManifestid 配置: {lua_filename}")
+            
+            # 移除文件末尾的空白行和固定版本注释块
+            content = content.rstrip()
+            content = re.sub(r'\n*-- Fixed Manifests \(Generated\)[^\n]*\n*', '\n', content)
+            
+            # 添加新的 setManifestid 行
+            new_content = content + "\n\n-- Fixed Manifests (Generated)\n" + "\n".join(manifest_lines) + "\n"
+            
+            # 写回文件
+            async with aiofiles.open(lua_path, 'w', encoding='utf-8') as f:
+                await f.write(new_content)
+            
+            self.log.info(f"[固定版本] 已更新 {lua_filename}，添加了 {len(manifest_lines)} 个 manifest 配置")
+            
+        except Exception as e:
+            self.log.error(f"[固定版本] 更新 lua 文件失败: {e}")
+
+    async def complete_manifest_files(self, app_id: str, progress_callback=None, cancel_check=None) -> Dict:
+        """主入库成功后的补全清单文件步骤：按 depot API 补全下载 manifest。
+        如果启用了 SteamTools 固定版本模式，会自动更新 lua 文件添加 setManifestid 配置。"""
+
+        def _report(progress: int, text: str = ""):
+            if callable(progress_callback):
+                try:
+                    progress_callback(max(0, min(100, int(progress))), text)
+                except Exception:
+                    pass
+
+        def _is_cancelled() -> bool:
+            if callable(cancel_check):
+                try:
+                    return bool(cancel_check())
+                except Exception:
+                    return False
+            return False
+
+        try:
+            if not self.steam_path:
+                return {"success": False, "message": "Steam 路径未初始化", "downloaded": 0, "total": 0}
+
+            if _is_cancelled():
+                return {"success": False, "cancelled": True, "message": "任务已取消", "downloaded": 0, "total": 0}
+
+            self.log.info(f"[补全清单文件] 开始补全 AppID {app_id} 的 manifest 文件...")
+            _report(5, "补全清单文件：准备阶段（读取 Depot 列表）")
+
+            api_url = f"https://manifest.steam.run/api/depot/{app_id}"
+            response = await self.http_get_safe(
+                api_url,
+                timeout=max(20, self.config.get("download_timeout", 30)),
+                max_retries=3
+            )
+            if not response:
+                msg = "补全清单文件失败：无法获取 depot 列表"
+                self.log.error(f"[补全清单文件] {msg} ({api_url})")
+                return {"success": False, "message": msg, "downloaded": 0, "total": 0}
+
+            try:
+                payload = response.json()
+            except Exception as e:
+                msg = f"补全清单文件失败：Depot API JSON 解析失败: {e}"
+                self.log.error(f"[补全清单文件] {msg}")
+                return {"success": False, "message": msg, "downloaded": 0, "total": 0}
+
+            depots = payload.get("depots", []) if isinstance(payload, dict) else []
+            if not depots:
+                msg = "补全清单文件失败：Depot 列表为空"
+                self.log.warning(f"[补全清单文件] {msg}")
+                return {"success": False, "message": msg, "downloaded": 0, "total": 0}
+
+            self.log.info(f"[补全清单文件] 获取到 {len(depots)} 个 depots，开始镜像测速与下载")
+            _report(15, f"补全清单文件：识别镜像源（共 {len(depots)} 个文件）")
+
+            raw_base = "https://raw.githubusercontent.com/qwe213312/k25FCdfEOoEJ42S6/main"
+            mirrors = [
+                "https://ghfast.top/",
+                "https://ghproxy.net/",
+                "https://ghp.ci/",
+                "https://gh-proxy.com/",
+                ""
+            ]
+
+            first = depots[0]
+            first_name = f"{first.get('depotid')}_{first.get('manifestid')}.manifest"
+            first_url = f"{raw_base}/{first_name}"
+            self.log.info(f"[补全清单文件] 测试第一个 manifest 文件的镜像可用性: {first_url}")
+
+            scored = []
+            for prefix in mirrors:
+                test_url = f"{prefix}{first_url}" if prefix else first_url
+                started = time.perf_counter()
+                try:
+                    r = await self.client.get(test_url, timeout=12)
+                    if r.status_code == 200 and r.content:
+                        cost = time.perf_counter() - started
+                        scored.append((cost, prefix))
+                        self.log.info(f"[补全清单文件] 镜像可用: {test_url.split('/')[2] if '://' in test_url else 'direct'} ({cost:.2f}s)")
+                except Exception:
+                    pass
+
+            if scored:
+                scored.sort(key=lambda x: x[0])
+                ordered_mirrors = [p for _, p in scored]
+                for p in mirrors:
+                    if p not in ordered_mirrors:
+                        ordered_mirrors.append(p)
+            else:
+                ordered_mirrors = mirrors
+                self.log.warning("[补全清单文件] 镜像测速未命中，按默认顺序尝试")
+
+            depotcache = self.steam_path / 'depotcache'
+            depotcache.mkdir(parents=True, exist_ok=True)
+            config_depotcache = self.steam_path / 'config' / 'depotcache'
+            config_depotcache.mkdir(parents=True, exist_ok=True)
+
+            downloaded = 0
+            total = len(depots)
+            downloaded_names = []
+            failed_names = []
+            max_file_retries = 3
+            method2_max_retries = 2
+            method2_success_count = 0
+            manifest_api_key = str(self.config.get("ManifestAPIKey", "") or "").strip()
+            if not manifest_api_key:
+                legacy_keys = ["ManifestKey", "manifest_api_key", "manifestKey", "manifest_apiKey"]
+                for key_name in legacy_keys:
+                    legacy_value = str(self.config.get(key_name, "") or "").strip()
+                    if legacy_value:
+                        manifest_api_key = legacy_value
+                        self.log.info(f"[补全清单文件] 检测到兼容配置键: {key_name}")
+                        break
+
+            def _rollback_downloaded_files():
+                for name in downloaded_names:
+                    for folder in (depotcache, config_depotcache):
+                        try:
+                            target = folder / name
+                            if target.exists() and target.is_file():
+                                os.remove(target)
+                        except Exception as cleanup_error:
+                            self.log.warning(f"[补全清单文件] 回滚删除失败 {name}: {cleanup_error}")
+
+            for index, depot in enumerate(depots, start=1):
+                if _is_cancelled():
+                    _rollback_downloaded_files()
+                    msg = f"补全清单文件已取消：已回滚本次下载文件（{downloaded}/{total}）"
+                    self.log.warning(f"[补全清单文件] {msg}")
+                    return {
+                        "success": False,
+                        "cancelled": True,
+                        "message": msg,
+                        "downloaded": downloaded,
+                        "total": total
+                    }
+
+                depot_id = str(depot.get('depotid', '')).strip()
+                manifest_id = str(depot.get('manifestid', '')).strip()
+
+                if not depot_id.isdigit() or not manifest_id:
+                    failed_names.append(str(depot))
+                    self.log.warning(f"[补全清单文件] 跳过无效 depot 项: {depot}")
+                    continue
+
+                filename = f"{depot_id}_{manifest_id}.manifest"
+                raw_url = f"{raw_base}/{filename}"
+                file_base_progress = 20 + int((index - 1) / max(total, 1) * 70)
+                _report(file_base_progress, f"补全清单文件 {index}/{total}：方法1（镜像源）{filename}")
+
+                content = None
+                used_url = None
+                for attempt in range(1, max_file_retries + 1):
+                    if _is_cancelled():
+                        break
+
+                    _report(
+                        min(92, file_base_progress + 6),
+                        f"补全清单文件 {index}/{total}：方法1第 {attempt}/{max_file_retries} 次尝试"
+                    )
+                    for prefix in ordered_mirrors:
+                        url = f"{prefix}{raw_url}" if prefix else raw_url
+                        try:
+                            r = await self.client.get(url, timeout=max(20, self.config.get("download_timeout", 30)))
+                            if r.status_code == 200 and r.content:
+                                content = r.content
+                                used_url = url
+                                break
+                        except Exception:
+                            continue
+
+                    if content:
+                        break
+
+                    self.log.warning(f"[补全清单文件] 文件 {filename} 第 {attempt}/{max_file_retries} 次尝试失败")
+                    if attempt < max_file_retries:
+                        await asyncio.sleep(1.2 * attempt)
+
+                if _is_cancelled():
+                    _rollback_downloaded_files()
+                    msg = f"补全清单文件已取消：已回滚本次下载文件（{downloaded}/{total}）"
+                    self.log.warning(f"[补全清单文件] {msg}")
+                    return {
+                        "success": False,
+                        "cancelled": True,
+                        "message": msg,
+                        "downloaded": downloaded,
+                        "total": total
+                    }
+
+                # 方法1失败后走方法2 API
+                if not content:
+                    if not manifest_api_key:
+                        self.log.error(f"[补全清单文件] 方法2不可用（未配置 ManifestAPIKey）: {filename}")
+                    else:
+                        for api_attempt in range(1, method2_max_retries + 1):
+                            if _is_cancelled():
+                                break
+
+                            method2_url = (
+                                "https://api.manifesthub1.filegear-sg.me/manifest"
+                                f"?apikey={quote(manifest_api_key, safe='')}&depotid={depot_id}&manifestid={manifest_id}"
+                            )
+                            _report(
+                                min(95, file_base_progress + 10),
+                                f"补全清单文件 {index}/{total}：方法2（API）第 {api_attempt}/{method2_max_retries} 次尝试"
+                            )
+                            try:
+                                r2 = await self.client.get(method2_url, timeout=max(20, self.config.get("download_timeout", 30)))
+                                if r2.status_code == 200 and r2.content:
+                                    content = r2.content
+                                    used_url = method2_url
+                                    method2_success_count += 1
+                                    self.log.info(f"[补全清单文件] 方法2下载成功: {filename}")
+                                    break
+                            except Exception as method2_error:
+                                self.log.warning(f"[补全清单文件] 方法2请求异常 {filename}: {method2_error}")
+
+                            if api_attempt < method2_max_retries:
+                                await asyncio.sleep(1.0 * api_attempt)
+
+                if not content:
+                    failed_names.append(filename)
+                    self.log.error(f"[补全清单文件] 下载失败: {filename}（方法1/方法2重试后仍失败）")
+                    continue
+
+                (depotcache / filename).write_bytes(content)
+                (config_depotcache / filename).write_bytes(content)
+                downloaded += 1
+                downloaded_names.append(filename)
+                self.log.info(f"[补全清单文件] 已保存: {filename} -> {depotcache} / {config_depotcache} (来源: {used_url})")
+
+            # 必须全量成功：只要有失败就回滚本次已下载文件并判定失败
+            if failed_names or downloaded != total:
+                _report(96, "补全清单文件：校验失败，正在回滚已下载文件")
+                _rollback_downloaded_files()
+
+                msg = f"补全清单文件失败：仅完成 {downloaded}/{total}，已回滚本次下载文件"
+                self.log.error(f"[补全清单文件] {msg}，失败项: {failed_names}")
+                return {
+                    "success": False,
+                    "message": msg,
+                    "downloaded": downloaded,
+                    "total": total,
+                    "failed": failed_names
+                }
+
+            # 记录下载的 manifest
+            if downloaded_names:
+                self._record_manifests_for_app(str(app_id), downloaded_names)
+
+            # 如果启用了 SteamTools 固定版本模式，更新 lua 文件添加 setManifestid 配置
+            is_st_fixed_version = self.config.get("ST_Fixed_Version", False)
+            if is_st_fixed_version and downloaded_names:
+                await self._update_lua_for_fixed_version(app_id, depots)
+
+            _report(100, f"游戏入库成功：{downloaded}/{total}（方法2命中 {method2_success_count}）")
+            self.log.info(f"[补全清单文件] 完成，成功 {downloaded}/{total}")
+            return {
+                "success": True,
+                "message": f"游戏入库成功：成功 {downloaded}/{total}",
+                "downloaded": downloaded,
+                "total": total,
+                "failed": failed_names,
+                "method2_used": method2_success_count
+            }
+
+        except Exception as e:
+            msg = f"补全清单文件异常: {e}"
+            self.log.error(f"[补全清单文件] {self.stack_error(e)}")
+            return {"success": False, "message": msg, "downloaded": 0, "total": 0}
+
+    async def sync_manifests_after_download(self, app_id: str, progress_callback=None, cancel_check=None) -> Dict:
+        """兼容旧调用名：转发到补全清单文件流程。"""
+        return await self.complete_manifest_files(app_id, progress_callback=progress_callback, cancel_check=cancel_check)
