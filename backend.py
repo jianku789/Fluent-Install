@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Tuple, Any, List, Dict, Literal
 from urllib.parse import quote
 
-CURRENT_VERSION = "2.3"  # 当前版本号
+CURRENT_VERSION = "2.4"  # 当前版本号
 GITHUB_REPO = "zhouchentao666/Fluent-Install"
 
 # --- LOGGING SETUP ---
@@ -1915,6 +1915,100 @@ class CaiBackend:
         except Exception as e:
             self.log.error(f'处理 Sudama 库清单时出错: {self.stack_error(e)}')
             return False
+            
+            
+    async def _process_cysaw_manifest(self, app_id: str, unlocker_type: str, use_st_auto_update: bool, add_all_dlc: bool, patch_depot_key: bool) -> bool:
+        """处理 Cysaw 清单下载（cysaw.pw POST 接口）"""
+        self.log.info(f"正从 Cysaw 下载 AppID {app_id} 的清单...")
+        zip_path = self.temp_path / f"cysaw_{app_id}.zip"
+        extract_path = self.temp_path / f"cysaw_{app_id}"
+        try:
+            resp = await self.client.post(
+                "https://cysaw.pw/proxy",
+                json={"appId": int(app_id)},
+                headers={
+                    "Origin": "https://cysaw.pw",
+                    "Referer": "https://cysaw.pw/",
+                    "Content-Type": "application/json",
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                },
+                timeout=max(180, self.config.get("download_timeout", 30) * 6),
+                follow_redirects=True,
+            )
+            if resp.status_code == 404:
+                self.log.warning(f"Cysaw 中未找到 AppID {app_id}")
+                return False
+            if resp.status_code != 200:
+                self.log.error(f"Cysaw 下载失败，状态码: {resp.status_code}")
+                return False
+
+            self.temp_path.mkdir(parents=True, exist_ok=True)
+            async with aiofiles.open(zip_path, 'wb') as f:
+                await f.write(resp.content)
+            self.log.info("正在解压...")
+            with zipfile.ZipFile(zip_path, 'r') as z:
+                z.extractall(extract_path)
+
+            st_files = list(extract_path.rglob('*.st'))
+            if st_files:
+                st_converter = STConverter()
+                for st_file in st_files:
+                    try:
+                        lua_content = st_converter.convert_file(str(st_file))
+                        st_file.with_suffix('.lua').write_text(lua_content, encoding='utf-8')
+                    except Exception as e:
+                        self.log.error(f"转换 {st_file.name} 失败: {e}")
+
+            manifest_files = list(extract_path.rglob('*.manifest'))
+            lua_files = list(extract_path.rglob('*.lua'))
+
+            if unlocker_type == "steamtools":
+                stplug_path = self.steam_path / 'config' / 'stplug-in'
+                stplug_path.mkdir(parents=True, exist_ok=True)
+                all_depots = {}
+                for lua_f in lua_files:
+                    all_depots.update(self.parse_lua_file_for_depots(str(lua_f)))
+                lua_filepath = stplug_path / f"{app_id}.lua"
+                async with aiofiles.open(lua_filepath, mode="w", encoding="utf-8") as lua_file:
+                    await lua_file.write(f'addappid({app_id})\n')
+                    for depot_id, info in all_depots.items():
+                        await lua_file.write(f'addappid({depot_id}, 1, "{info["DecryptionKey"]}")\n')
+                    for manifest_f in manifest_files:
+                        match = re.search(r'(\d+)_(\w+)\.manifest', manifest_f.name)
+                        if match:
+                            line = f'setManifestid({match.group(1)}, "{match.group(2)}")\n'
+                            await lua_file.write('--' + line if use_st_auto_update else line)
+                for manifest_f in manifest_files:
+                    for dest in [self.steam_path / 'config' / 'depotcache', self.steam_path / 'depotcache']:
+                        dest.mkdir(parents=True, exist_ok=True)
+                        shutil.copy2(manifest_f, dest / manifest_f.name)
+                self.log.info(f"已为 SteamTools 生成解锁文件: {app_id}.lua")
+                if add_all_dlc:
+                    await self._add_free_dlcs_to_lua(app_id, lua_filepath)
+                if patch_depot_key:
+                    await self.patch_lua_with_depotkey(app_id, lua_filepath)
+            else:
+                steam_depot_path = self.steam_path / 'depotcache'
+                steam_depot_path.mkdir(parents=True, exist_ok=True)
+                for f in manifest_files:
+                    shutil.copy2(f, steam_depot_path / f.name)
+                all_depots = {}
+                for lua in lua_files:
+                    all_depots.update(self.parse_lua_file_for_depots(str(lua)))
+                if all_depots:
+                    await self.depotkey_merge(self.steam_path / 'config' / 'config.vdf', {'depots': all_depots})
+
+            self.log.info(f"成功处理 Cysaw 清单: AppID {app_id}")
+            return True
+        except Exception as e:
+            self.log.error(f"处理 Cysaw 清单时出错: {self.stack_error(e)}")
+            return False
+        finally:
+            if zip_path.exists():
+                zip_path.unlink(missing_ok=True)
+            if extract_path.exists():
+                shutil.rmtree(extract_path, ignore_errors=True)
+
 
     async def _process_mhub_manifest(self, app_id: str, unlocker_type: str, use_st_auto_update: bool, add_all_dlc: bool, patch_depot_key: bool) -> bool:
         """处理 MHub 清单下载（steamhub.156354.xyz）"""
@@ -3033,6 +3127,7 @@ class CaiBackend:
 
     async def process_zip_source(self, app_id: str, tool_type: str, unlocker_type: str, use_st_auto_update: bool, add_all_dlc: bool, patch_depot_key: bool = False) -> bool:
         source_map = {
+            "cysaw": "special",
             "walftech": "https://walftech.com/proxy.php?url=https%3A%2F%2Fsteamgames554.s3.us-east-1.amazonaws.com%2F{app_id}.zip",
             "steamautocracks_v2": "special",
             "steamautocracks_v1": "special",
@@ -3054,7 +3149,10 @@ class CaiBackend:
         # 特殊处理 steamautocracks_v1（GitHub分支方式）
         if tool_type == "steamautocracks_v1":
             return await self.process_github_manifest(app_id, "SteamAutoCracks/ManifestHub", unlocker_type, use_st_auto_update, add_all_dlc, patch_depot_key)
-       # 特殊处理 sac-other：直连失败时自动走镜像
+        # 特殊处理 Cysaw：POST 请求
+        if tool_type == "cysaw":
+            return await self._process_cysaw_manifest(app_id, unlocker_type, use_st_auto_update, add_all_dlc, patch_depot_key)
+        # 特殊处理 sac-other：直连失败时自动走镜像
         if tool_type == "sac-other":
             repo = "SteamAutoCracks/ManifestHub"
             direct_url = f"https://codeload.github.com/{repo}/zip/refs/heads/{app_id}"
@@ -3277,7 +3375,32 @@ class CaiBackend:
         try:
             self.log.info(f"正在尝试搜索游戏: {game_name}")
 
-            # 主用 CaiGames API
+            # 优先使用小黑盒+steam增强搜索
+            r = await self.client.get(
+                "https://api.9178666.xyz/steam",
+                params={'term': game_name, 'cc': 'cn'},
+                headers={
+                    "X-Client-Auth": "CaiGames-pvzcxw",
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                    "Accept": "application/json"
+                },
+                timeout=20
+            )
+            if r.status_code != 403:
+                r.raise_for_status()
+                resp_json = r.json()
+                raw_data = resp_json.get("data", []) if isinstance(resp_json, dict) and (resp_json.get("status") == "ok" or "data" in resp_json) else []
+                results = [{'appid': str(i.get('appid')), 'name': i.get('name'), 'header_image': i.get('image')} for i in raw_data if i.get('appid') and i.get('name')]
+                if results:
+                    self.log.info(f"小黑盒+steam增强搜索 成功找到 {len(results)} 个匹配结果")
+                    return results
+            else:
+                self.log.warning("小黑盒+steam增强搜索 返回 403，切换到 CaiGames API")
+        except Exception as e:
+            self.log.warning(f"小黑盒+steam增强搜索 失败，切换到 CaiGames API: {e}")
+
+        # 备用：CaiGames API
+        try:
             r = await self.client.get(
                 "https://api.9178666.xyz/search",
                 params={'term': game_name},
@@ -3335,6 +3458,101 @@ class CaiBackend:
             self.log.error(f"搜索游戏 '{game_name}' 失败: {self.stack_error(e)}")
 
         return []
+
+    async def get_game_info_by_appid(self, appid: str) -> Dict:
+        """通过AppID获取游戏详细信息，使用steamCMD信息代理"""
+        try:
+            self.log.info(f"正在获取游戏详细信息: AppID {appid}")
+            
+            # 使用steamCMD信息代理
+            r = await self.client.get(
+                f"https://api.9178666.xyz/cmd/{appid}",
+                headers={
+                    "X-Client-Auth": "CaiGames-pvzcxw",
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                    "Accept": "application/json"
+                },
+                timeout=20
+            )
+            
+            if r.status_code == 200:
+                data = r.json()
+                if data.get("success") and "data" in data:
+                    game_data = data["data"]
+                    return {
+                        "appid": appid,
+                        "name": game_data.get("name", ""),
+                        "header_image": game_data.get("header_image", f"https://cdn.cloudflare.steamstatic.com/steam/apps/{appid}/header.jpg"),
+                        "description": game_data.get("short_description", ""),
+                        "price": game_data.get("price_overview", {}).get("final_formatted", ""),
+                        "release_date": game_data.get("release_date", {}).get("date", ""),
+                        "platforms": game_data.get("platforms", {}),
+                        "metacritic": game_data.get("metacritic", {}).get("score", 0)
+                    }
+            
+            self.log.warning(f"无法通过API获取游戏 {appid} 的详细信息")
+            return {"appid": appid, "name": "", "header_image": f"https://cdn.cloudflare.steamstatic.com/steam/apps/{appid}/header.jpg"}
+            
+        except Exception as e:
+            self.log.error(f"获取游戏 {appid} 信息失败: {e}")
+            return {"appid": appid, "name": "", "header_image": f"https://cdn.cloudflare.steamstatic.com/steam/apps/{appid}/header.jpg"}
+
+    async def get_game_dlcs(self, appid: str) -> List[Dict]:
+        """获取游戏的DLC列表，使用steam DLC列表代理"""
+        try:
+            self.log.info(f"正在获取游戏 DLC 列表: AppID {appid}")
+            
+            # 使用steam DLC列表代理
+            r = await self.client.get(
+                f"https://api.9178666.xyz/dlcs/{appid}",
+                headers={
+                    "X-Client-Auth": "CaiGames-pvzcxw",
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                    "Accept": "application/json"
+                },
+                timeout=20
+            )
+            
+            if r.status_code == 200:
+                data = r.json()
+                if data.get("success") and "data" in data:
+                    dlc_list = data["data"]
+                    return [{
+                        "appid": str(dlc.get("appid", "")),
+                        "name": dlc.get("name", ""),
+                        "price": dlc.get("price_overview", {}).get("final_formatted", "免费")
+                    } for dlc in dlc_list if dlc.get("appid")]
+            
+            self.log.warning(f"无法通过API获取游戏 {appid} 的DLC列表")
+            return []
+            
+        except Exception as e:
+            self.log.error(f"获取游戏 {appid} DLC列表失败: {e}")
+            return []
+
+    async def check_steam_status(self) -> Dict:
+        """检查Steam服务器状态"""
+        try:
+            self.log.info("正在检查Steam服务器状态")
+            
+            r = await self.client.get(
+                "https://api.9178666.xyz",
+                headers={
+                    "X-Client-Auth": "CaiGames-pvzcxw",
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                    "Accept": "application/json"
+                },
+                timeout=10
+            )
+            
+            if r.status_code == 200:
+                return {"status": "online", "message": "Steam服务器正常运行"}
+            else:
+                return {"status": "offline", "message": "Steam服务器暂时不可用"}
+                
+        except Exception as e:
+            self.log.error(f"检查Steam服务器状态失败: {e}")
+            return {"status": "error", "message": f"检查失败: {str(e)}"}
 
     async def cleanup_temp_files(self):
         try:

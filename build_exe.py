@@ -71,7 +71,6 @@ def build_exe():
         print("\n打包完成！")
         print(f"生成的 exe 文件在: {current_dir / 'dist' / 'FluentInstall.exe'}")
         
-        
     except Exception as e:
         print(f"打包失败: {e}")
         return False
