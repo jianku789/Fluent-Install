@@ -27,8 +27,18 @@ from qfluentwidgets import (
     Slider
 )
 
+# 项目根目录（兼容直接运行和 PyInstaller 打包）
+def _get_app_root() -> Path:
+    if getattr(sys, 'frozen', False):
+        # PyInstaller 打包后，exe 所在目录
+        return Path(sys.executable).parent
+    # 开发模式，以本文件所在目录为根
+    return Path(__file__).resolve().parent
+
+APP_ROOT = _get_app_root()
+
 # 导入后端
-from backend import CaiBackend, get_steam_lang, CURRENT_VERSION, GITHUB_REPO
+from cai_backend import CaiBackend, get_steam_lang, CURRENT_VERSION, GITHUB_REPO
 
 import time as _time
 # 模块级推荐缓存（进程内共享，避免切换页面重复请求）
@@ -66,6 +76,14 @@ LANGUAGES = {
     "zh_TW": {
         "name": "繁體中文",
         "locale": QLocale(QLocale.Language.Chinese, QLocale.Country.Taiwan)
+    },
+    "ko_KR": {
+        "name": "한국어",
+        "locale": QLocale(QLocale.Language.Korean, QLocale.Country.SouthKorea)
+    },
+    "es_ES": {
+        "name": "Español",
+        "locale": QLocale(QLocale.Language.Spanish, QLocale.Country.Spain)
     }
 }
 
@@ -89,7 +107,7 @@ class QtLogHandler(QObject, logging.Handler):
 def load_theme_config():
     """加载主题配置"""
     try:
-        config_path = Path.cwd() / 'config.json'
+        config_path = APP_ROOT / 'config' / 'config.json'
         if config_path.exists():
             import json
             with open(config_path, 'r', encoding='utf-8') as f:
@@ -106,7 +124,7 @@ def load_theme_config():
 def load_language_config():
     """加载语言配置"""
     try:
-        config_path = Path.cwd() / 'config.json'
+        config_path = APP_ROOT / 'config' / 'config.json'
         if config_path.exists():
             import json
             with open(config_path, 'r', encoding='utf-8') as f:
@@ -218,6 +236,7 @@ TEXTS = {
         "red": "红色 (#e81123)",
         "pink": "粉色 (#e3008c)",
         "tip_source_fail": "提示: 如果某个源失败，请尝试其他源",
+        "auto_select": "自动选择",
         "auto_search_github": "自动搜索GitHub",
         "sac-other": "sac分流",
         "walftech": "Walftech",
@@ -236,7 +255,6 @@ TEXTS = {
         "already_latest": "已是最新版本",
         "already_latest_content": "当前已是最新版本，无需更新。",
         "check_update_failed": "检查更新失败",
-        "restart_steam_title": "重启 Steam",
         "restart_steam_confirm_message": "确定要重启 Steam 吗？\n\n这将关闭当前运行的 Steam 并重新启动。",
         
         # 缺失的翻译键
@@ -289,6 +307,15 @@ TEXTS = {
         "st_fixed_manifest_ask": "询问",
         "dlc_timeout": "DLC 联网超时时间",
         "dlc_timeout_hint": "获取DLC列表超时时间，网络较差时可适当调大（秒）",
+        "show_progress_bar": "显示进度条",
+        "show_progress_bar_hint": "在搜索和入库过程中显示进度条，提供更好的用户体验",
+        "sidebar_settings": "侧栏显示设置（重启生效）",
+        "hide_search": "隐藏搜索入库",
+        "hide_search_hint": "隐藏侧栏中的搜索入库选项",
+        "hide_launcher": "隐藏联机游戏",
+        "hide_launcher_hint": "隐藏侧栏中的联机游戏选项",
+        "hide_trainer": "隐藏修改器",
+        "hide_trainer_hint": "隐藏侧栏中的修改器选项",
         "name_not_found": "名称未找到",
         "fetch_failed": "获取失败",
     },
@@ -377,6 +404,7 @@ TEXTS = {
         "orange": "Orange (#ff8c00)",
         "red": "Red (#e81123)",
         "pink": "Pink (#e3008c)",
+        "auto_select": "Auto Select",
         "tip_source_fail": "Tip: If one source fails, try another",
         "auto_search_github": "Auto Search GitHub",
         "swa_v2": "SWA V2",
@@ -395,7 +423,6 @@ TEXTS = {
         "already_latest": "Already Up to Date",
         "already_latest_content": "You are running the latest version.",
         "check_update_failed": "Check Update Failed",
-        "restart_steam_title": "Restart Steam",
         "restart_steam_confirm_message": "Are you sure you want to restart Steam?\n\nThis will close the currently running Steam and restart it.",
         
         # 缺失的翻译键
@@ -447,6 +474,15 @@ TEXTS = {
         "st_fixed_manifest_ask": "Ask",
         "dlc_timeout": "DLC Network Timeout",
         "dlc_timeout_hint": "Timeout for fetching DLC list, increase if network is slow (seconds)",
+        "show_progress_bar": "Show Progress Bar",
+        "show_progress_bar_hint": "Show progress bar during search and installation for better user experience",
+        "sidebar_settings": "Sidebar Settings (Restart Required)",
+        "hide_search": "Hide Search",
+        "hide_search_hint": "Hide the search library option in sidebar",
+        "hide_launcher": "Hide Online Games",
+        "hide_launcher_hint": "Hide the online games option in sidebar",
+        "hide_trainer": "Hide Trainers",
+        "hide_trainer_hint": "Hide the trainers option in sidebar",
         "name_not_found": "Name Not Found",
         "fetch_failed": "Fetch Failed",
     },
@@ -544,6 +580,7 @@ TEXTS = {
         "red": "Rouge (#e81123)",
         "pink": "Rose (#e3008c)",
         "tip_source_fail": "Astuce: Si une source échoue, essayez-en une autre",
+        "auto_select": "Sélection automatique",
         "auto_search_github": "Recherche automatique GitHub",
         "swa_v2": "SWA V2",
         "walftech": "Walftech",
@@ -612,6 +649,15 @@ TEXTS = {
         "st_fixed_manifest_ask": "Demander",
         "dlc_timeout": "Délai réseau DLC",
         "dlc_timeout_hint": "Délai d'attente pour récupérer la liste DLC, augmenter si le réseau est lent (secondes)",
+        "show_progress_bar": "Afficher la barre de progression",
+        "show_progress_bar_hint": "Afficher la barre de progression pendant la recherche et l'ajout pour une meilleure expérience",
+        "sidebar_settings": "Paramètres de la barre latérale (Redémarrage requis)",
+        "hide_search": "Masquer la recherche",
+        "hide_search_hint": "Masquer l'option de recherche dans la barre latérale",
+        "hide_launcher": "Masquer les jeux en ligne",
+        "hide_launcher_hint": "Masquer l'option des jeux en ligne dans la barre latérale",
+        "hide_trainer": "Masquer les trainers",
+        "hide_trainer_hint": "Masquer l'option des trainers dans la barre latérale",
         "name_not_found": "Nom introuvable",
         "fetch_failed": "Échec de récupération",
     },
@@ -709,6 +755,7 @@ TEXTS = {
         "red": "Красный (#e81123)",
         "pink": "Розовый (#e3008c)",
         "tip_source_fail": "Совет: Если один источник не работает, попробуйте другой",
+        "auto_select": "Автоматический выбор",
         "auto_search_github": "Автопоиск GitHub",
         "swa_v2": "SWA V2",
         "walftech": "Walftech",
@@ -777,6 +824,15 @@ TEXTS = {
         "st_fixed_manifest_ask": "Спрашивать",
         "dlc_timeout": "Тайм-аут сети DLC",
         "dlc_timeout_hint": "Тайм-аут получения списка DLC, увеличьте при медленной сети (секунды)",
+        "show_progress_bar": "Показывать индикатор прогресса",
+        "show_progress_bar_hint": "Показывать индикатор прогресса во время поиска и добавления для лучшего опыта",
+        "sidebar_settings": "Настройки боковой панели (Требуется перезапуск)",
+        "hide_search": "Скрыть поиск",
+        "hide_search_hint": "Скрыть опцию поиска в боковой панели",
+        "hide_launcher": "Скрыть онлайн-игры",
+        "hide_launcher_hint": "Скрыть опцию онлайн-игр в боковой панели",
+        "hide_trainer": "Скрыть трейнеры",
+        "hide_trainer_hint": "Скрыть опцию трейнеров в боковой панели",
         "name_not_found": "Имя не найдено",
         "fetch_failed": "Ошибка получения",
     },
@@ -874,6 +930,7 @@ TEXTS = {
         "red": "Rot (#e81123)",
         "pink": "Pink (#e3008c)",
         "tip_source_fail": "Tipp: Wenn eine Quelle fehlschlägt, versuchen Sie eine andere",
+        "auto_select": "Automatisch auswählen",
         "auto_search_github": "Automatische GitHub-Suche",
         "swa_v2": "SWA V2",
         "walftech": "Walftech",
@@ -942,6 +999,15 @@ TEXTS = {
         "st_fixed_manifest_ask": "Fragen",
         "dlc_timeout": "DLC-Netzwerk-Timeout",
         "dlc_timeout_hint": "Timeout für DLC-Liste, bei langsamen Netzwerk erhöhen (Sekunden)",
+        "show_progress_bar": "Fortschrittsbalken anzeigen",
+        "show_progress_bar_hint": "Fortschrittsbalken während Suche und Hinzufügen für bessere Benutzererfahrung anzeigen",
+        "sidebar_settings": "Seitenleisteneinstellungen (Neustart erforderlich)",
+        "hide_search": "Suche ausblenden",
+        "hide_search_hint": "Suchoption in der Seitenleiste ausblenden",
+        "hide_launcher": "Online-Spiele ausblenden",
+        "hide_launcher_hint": "Online-Spiele-Option in der Seitenleiste ausblenden",
+        "hide_trainer": "Trainer ausblenden",
+        "hide_trainer_hint": "Trainer-Option in der Seitenleiste ausblenden",
         "name_not_found": "Name nicht gefunden",
         "fetch_failed": "Abruf fehlgeschlagen",
     },
@@ -1040,6 +1106,7 @@ TEXTS = {
         "pink": "ピンク (#e3008c)",
         "tip_source_fail": "ヒント: ソースが失敗した場合は別のソースを試してください",
         "auto_search_github": "GitHubを自動検索",
+        "auto_select": "自動選択",
         "swa_v2": "SWA V2",
         "walftech": "Walftech",
         "steamautocracks_v2": "SteamAutoCracks V2 (キーのみ)",
@@ -1107,6 +1174,15 @@ TEXTS = {
         "st_fixed_manifest_ask": "確認",
         "dlc_timeout": "DLC ネットワークタイムアウト",
         "dlc_timeout_hint": "DLCリスト取得のタイムアウト、ネットワークが遅い場合は増やしてください（秒）",
+        "show_progress_bar": "進捗バーを表示",
+        "show_progress_bar_hint": "検索と追加中に進捗バーを表示して、より良いユーザー体験を提供",
+        "sidebar_settings": "サイドバー設定（再起動が必要）",
+        "hide_search": "検索を非表示",
+        "hide_search_hint": "サイドバーの検索オプションを非表示",
+        "hide_launcher": "オンラインゲームを非表示",
+        "hide_launcher_hint": "サイドバーのオンラインゲームオプションを非表示",
+        "hide_trainer": "トレーナーを非表示",
+        "hide_trainer_hint": "サイドバーのトレーナーオプションを非表示",
         "name_not_found": "名前が見つかりません",
         "fetch_failed": "取得失敗",
     },
@@ -1211,6 +1287,7 @@ TEXTS = {
         "red": "紅色 (#e81123)",
         "pink": "粉紅色 (#e3008c)",
         "tip_source_fail": "提示: 若某個來源失敗，請嘗試其他來源",
+        "auto_select": "自動選取",
         "auto_search_github": "自動搜尋GitHub",
         "swa_v2": "SWA V2",
         "walftech": "Walftech",
@@ -1230,8 +1307,8 @@ TEXTS = {
         "check_update_failed": "檢查更新失敗",
         "restart_steam_title": "重新啟動 Steam",
         "restart_steam_confirm_message": "確定要重新啟動 Steam 嗎？\n\n這將關閉目前執行中的 Steam 並重新啟動。",
-        
         # 缺失的翻譯鍵
+        "settings_log_title": "日誌",
         "tip": "提示",
         "recognition_success": "辨識成功",
         "game_not_found": "找不到相符的遊戲",
@@ -1281,6 +1358,15 @@ TEXTS = {
         "st_fixed_manifest_ask": "詢問",
         "dlc_timeout": "DLC 聯網超時時間",
         "dlc_timeout_hint": "獲取DLC列表超時時間，網路較差時可適當調大（秒）",
+        "show_progress_bar": "顯示進度條",
+        "show_progress_bar_hint": "在搜尋和入库過程中顯示進度條，提供更好的使用者體驗",
+        "sidebar_settings": "側欄顯示設定（重新啟動生效）",
+        "hide_search": "隱藏搜尋入库",
+        "hide_search_hint": "隱藏側欄中的搜尋入库選項",
+        "hide_launcher": "隱藏連線遊戲",
+        "hide_launcher_hint": "隱藏側欄中的連線遊戲選項",
+        "hide_trainer": "隱藏修改器",
+        "hide_trainer_hint": "隱藏側欄中的修改器選項",
         "name_not_found": "名稱未找到",
         "fetch_failed": "獲取失敗",
     },
@@ -1357,6 +1443,21 @@ _LAUNCHER_TEXTS = {
         "settings_log_title": "Runtime Log",
         "settings_clear_log": "Clear Log",
     },
+    "zh_TW": {
+        "launcher": "多人遊戲",
+        "launcher_title": "多人遊戲啟動器",
+        "launcher_status_ready": "系統準備就緒",
+        "launcher_status_running": "服務運行中",
+        "launcher_game_exe": "遊戲可執行檔",
+        "launcher_browse": "瀏覽",
+        "launcher_app_id": "協議ID (AppID)",
+        "launcher_app_id_hint": "預設為480 (太空戰)，可更改为實際遊戲AppID",
+        "launcher_start": "啟動服務並啟動遊戲",
+        "launcher_stop": "停止服務",
+        "launcher_log": "運行時日誌",
+        "launcher_clear_log": "清除日誌",
+    }
+
 }
 for _lang, _keys in _LAUNCHER_TEXTS.items():
     if _lang in TEXTS:
@@ -1389,6 +1490,304 @@ for _lang, _keys in _EXTRA_TEXTS.items():
 for _lang in TEXTS:
     if _lang not in _EXTRA_TEXTS:
         TEXTS[_lang].update(_EXTRA_TEXTS["zh_CN"])
+
+# ===== 修改器页面翻译键 =====
+_TRAINER_TEXTS = {
+    "zh_CN": {
+        "trainer_nav": "修改器",
+        "trainer_title": "游戏修改器",
+        "trainer_search_placeholder": "搜索修改器（游戏名称）...",
+        "trainer_search_btn": "搜索",
+        "trainer_installed_title": "已安装的修改器",
+        "trainer_search_results": "搜索结果",
+        "trainer_download_btn": "下载",
+        "trainer_launch_btn": "启动",
+        "trainer_delete_btn": "删除",
+        "trainer_refresh_btn": "刷新",
+        "trainer_open_folder": "打开目录",
+        "trainer_no_installed": "暂无已安装的修改器",
+        "trainer_no_results": "未找到相关修改器",
+        "trainer_searching": "正在搜索...",
+        "trainer_downloading": "正在下载...",
+        "trainer_download_success": "下载成功",
+        "trainer_download_failed": "下载失败",
+        "trainer_launch_failed": "启动失败",
+        "trainer_delete_confirm": "确认删除",
+        "trainer_delete_confirm_msg": "确定要删除 {0} 吗？",
+        "trainer_deleted": "已删除",
+        "trainer_db_missing": "未找到 GCM 数据库",
+        "trainer_db_missing_hint": "请先安装并运行 Game Cheats Manager 以下载修改器数据库，或直接搜索（需要网络）",
+        "trainer_version": "版本",
+        "trainer_source": "来源",
+        "trainer_log": "操作日志",
+        "trainer_clear_log": "清空日志",
+        "trainer_already_exists": "修改器已存在",
+        "trainer_open_gcm": "打开 GCM",
+        "trainer_progress": "下载进度",
+    },
+    "en_US": {
+        "trainer_nav": "Trainers",
+        "trainer_title": "Game Trainers",
+        "trainer_search_placeholder": "Search trainers (game name)...",
+        "trainer_search_btn": "Search",
+        "trainer_installed_title": "Installed Trainers",
+        "trainer_search_results": "Search Results",
+        "trainer_download_btn": "Download",
+        "trainer_launch_btn": "Launch",
+        "trainer_delete_btn": "Delete",
+        "trainer_refresh_btn": "Refresh",
+        "trainer_open_folder": "Open Folder",
+        "trainer_no_installed": "No trainers installed",
+        "trainer_no_results": "No trainers found",
+        "trainer_searching": "Searching...",
+        "trainer_downloading": "Downloading...",
+        "trainer_download_success": "Download successful",
+        "trainer_download_failed": "Download failed",
+        "trainer_launch_failed": "Launch failed",
+        "trainer_delete_confirm": "Confirm Delete",
+        "trainer_delete_confirm_msg": "Are you sure you want to delete {0}?",
+        "trainer_deleted": "Deleted",
+        "trainer_db_missing": "GCM Database Not Found",
+        "trainer_db_missing_hint": "Please install and run Game Cheats Manager to download the trainer database, or search directly (requires internet)",
+        "trainer_version": "Version",
+        "trainer_source": "Source",
+        "trainer_log": "Operation Log",
+        "trainer_clear_log": "Clear Log",
+        "trainer_already_exists": "Trainer already exists",
+        "trainer_open_gcm": "Open GCM",
+        "trainer_progress": "Download Progress",
+    },
+    "ja_JP": {
+        "trainer_nav": "トレーナー",
+        "trainer_title": "ゲームトレーナー",
+        "trainer_search_placeholder": "トレーナーを検索（ゲーム名）...",
+        "trainer_search_btn": "検索",
+        "trainer_installed_title": "インストール済みトレーナー",
+        "trainer_search_results": "検索結果",
+        "trainer_download_btn": "ダウンロード",
+        "trainer_launch_btn": "起動",
+        "trainer_delete_btn": "削除",
+        "trainer_refresh_btn": "更新",
+        "trainer_open_folder": "フォルダを開く",
+        "trainer_no_installed": "インストール済みトレーナーはありません",
+        "trainer_no_results": "トレーナーが見つかりません",
+        "trainer_searching": "検索中...",
+        "trainer_downloading": "ダウンロード中...",
+        "trainer_download_success": "ダウンロード成功",
+        "trainer_download_failed": "ダウンロード失敗",
+        "trainer_launch_failed": "起動失敗",
+        "trainer_delete_confirm": "削除の確認",
+        "trainer_delete_confirm_msg": "{0} を削除してもよろしいですか？",
+        "trainer_deleted": "削除しました",
+        "trainer_db_missing": "GCMデータベースが見つかりません",
+        "trainer_db_missing_hint": "トレーナーデータベースをダウンロードするには、Game Cheats Managerをインストールして実行するか、直接検索してください（インターネット接続が必要です）",
+        "trainer_version": "バージョン",
+        "trainer_source": "ソース",
+        "trainer_log": "操作ログ",
+        "trainer_clear_log": "ログをクリア",
+        "trainer_already_exists": "トレーナーは既に存在します",
+        "trainer_open_gcm": "GCMを開く",
+        "trainer_progress": "ダウンロード進捗",
+    },
+    "fr_FR": {
+        "trainer_nav": "Trainers",
+        "trainer_title": "Trainers de Jeu",
+        "trainer_search_placeholder": "Rechercher des trainers (nom du jeu)...",
+        "trainer_search_btn": "Rechercher",
+        "trainer_installed_title": "Trainers Installés",
+        "trainer_search_results": "Résultats de Recherche",
+        "trainer_download_btn": "Télécharger",
+        "trainer_launch_btn": "Lancer",
+        "trainer_delete_btn": "Supprimer",
+        "trainer_refresh_btn": "Actualiser",
+        "trainer_open_folder": "Ouvrir le Dossier",
+        "trainer_no_installed": "Aucun trainer installé",
+        "trainer_no_results": "Aucun trainer trouvé",
+        "trainer_searching": "Recherche en cours...",
+        "trainer_downloading": "Téléchargement en cours...",
+        "trainer_download_success": "Téléchargement réussi",
+        "trainer_download_failed": "Échec du téléchargement",
+        "trainer_launch_failed": "Échec du lancement",
+        "trainer_delete_confirm": "Confirmer la Suppression",
+        "trainer_delete_confirm_msg": "Êtes-vous sûr de vouloir supprimer {0} ?",
+        "trainer_deleted": "Supprimé",
+        "trainer_db_missing": "Base de Données GCM Introuvable",
+        "trainer_db_missing_hint": "Veuillez installer et exécuter Game Cheats Manager pour télécharger la base de données des trainers, ou recherchez directement (nécessite Internet)",
+        "trainer_version": "Version",
+        "trainer_source": "Source",
+        "trainer_log": "Journal des Opérations",
+        "trainer_clear_log": "Effacer le Journal",
+        "trainer_already_exists": "Le trainer existe déjà",
+        "trainer_open_gcm": "Ouvrir GCM",
+        "trainer_progress": "Progression du Téléchargement",
+    },
+    "ru_RU": {
+        "trainer_nav": "Трейнеры",
+        "trainer_title": "Игровые Трейнеры",
+        "trainer_search_placeholder": "Поиск трейнеров (название игры)...",
+        "trainer_search_btn": "Поиск",
+        "trainer_installed_title": "Установленные Трейнеры",
+        "trainer_search_results": "Результаты Поиска",
+        "trainer_download_btn": "Скачать",
+        "trainer_launch_btn": "Запустить",
+        "trainer_delete_btn": "Удалить",
+        "trainer_refresh_btn": "Обновить",
+        "trainer_open_folder": "Открыть Папку",
+        "trainer_no_installed": "Нет установленных трейнеров",
+        "trainer_no_results": "Трейнеры не найдены",
+        "trainer_searching": "Поиск...",
+        "trainer_downloading": "Загрузка...",
+        "trainer_download_success": "Загрузка успешна",
+        "trainer_download_failed": "Ошибка загрузки",
+        "trainer_launch_failed": "Ошибка запуска",
+        "trainer_delete_confirm": "Подтвердить Удаление",
+        "trainer_delete_confirm_msg": "Вы уверены, что хотите удалить {0}?",
+        "trainer_deleted": "Удалено",
+        "trainer_db_missing": "База Данных GCM Не Найдена",
+        "trainer_db_missing_hint": "Пожалуйста, установите и запустите Game Cheats Manager для загрузки базы данных трейнеров, или выполните прямой поиск (требуется интернет)",
+        "trainer_version": "Версия",
+        "trainer_source": "Источник",
+        "trainer_log": "Журнал Операций",
+        "trainer_clear_log": "Очистить Журнал",
+        "trainer_already_exists": "Трейнер уже существует",
+        "trainer_open_gcm": "Открыть GCM",
+        "trainer_progress": "Прогресс Загрузки",
+    },
+    "de_DE": {
+        "trainer_nav": "Trainer",
+        "trainer_title": "Spiel-Trainer",
+        "trainer_search_placeholder": "Trainer suchen (Spielname)...",
+        "trainer_search_btn": "Suchen",
+        "trainer_installed_title": "Installierte Trainer",
+        "trainer_search_results": "Suchergebnisse",
+        "trainer_download_btn": "Herunterladen",
+        "trainer_launch_btn": "Starten",
+        "trainer_delete_btn": "Löschen",
+        "trainer_refresh_btn": "Aktualisieren",
+        "trainer_open_folder": "Ordner Öffnen",
+        "trainer_no_installed": "Keine Trainer installiert",
+        "trainer_no_results": "Keine Trainer gefunden",
+        "trainer_searching": "Suche läuft...",
+        "trainer_downloading": "Wird heruntergeladen...",
+        "trainer_download_success": "Download erfolgreich",
+        "trainer_download_failed": "Download fehlgeschlagen",
+        "trainer_launch_failed": "Start fehlgeschlagen",
+        "trainer_delete_confirm": "Löschen Bestätigen",
+        "trainer_delete_confirm_msg": "Sind Sie sicher, dass Sie {0} löschen möchten?",
+        "trainer_deleted": "Gelöscht",
+        "trainer_db_missing": "GCM-Datenbank Nicht Gefunden",
+        "trainer_db_missing_hint": "Bitte installieren und starten Sie Game Cheats Manager, um die Trainer-Datenbank herunterzuladen, oder suchen Sie direkt (Internet erforderlich)",
+        "trainer_version": "Version",
+        "trainer_source": "Quelle",
+        "trainer_log": "Betriebsprotokoll",
+        "trainer_clear_log": "Protokoll Löschen",
+        "trainer_already_exists": "Trainer existiert bereits",
+        "trainer_open_gcm": "GCM Öffnen",
+        "trainer_progress": "Download-Fortschritt",
+    },
+    "zh_TW": {
+        "trainer_nav": "修改器",
+        "trainer_title": "遊戲修改器",
+        "trainer_search_placeholder": "搜尋修改器（遊戲名稱）...",
+        "trainer_search_btn": "搜尋",
+        "trainer_installed_title": "已安裝的修改器",
+        "trainer_search_results": "搜尋結果",
+        "trainer_download_btn": "下載",
+        "trainer_launch_btn": "啟動",
+        "trainer_delete_btn": "刪除",
+        "trainer_refresh_btn": "重新整理",
+        "trainer_open_folder": "開啟目錄",
+        "trainer_no_installed": "暫無已安裝的修改器",
+        "trainer_no_results": "未找到相關修改器",
+        "trainer_searching": "正在搜尋...",
+        "trainer_downloading": "正在下載...",
+        "trainer_download_success": "下載成功",
+        "trainer_download_failed": "下載失敗",
+        "trainer_launch_failed": "啟動失敗",
+        "trainer_delete_confirm": "確認刪除",
+        "trainer_delete_confirm_msg": "確定要刪除 {0} 嗎？",
+        "trainer_deleted": "已刪除",
+        "trainer_db_missing": "未找到 GCM 資料庫",
+        "trainer_db_missing_hint": "請先安裝並執行 Game Cheats Manager 以下載修改器資料庫，或直接搜尋（需要網路）",
+        "trainer_version": "版本",
+        "trainer_source": "來源",
+        "trainer_log": "操作日誌",
+        "trainer_clear_log": "清空日誌",
+        "trainer_already_exists": "修改器已存在",
+        "trainer_open_gcm": "開啟 GCM",
+        "trainer_progress": "下載進度",
+    },
+    "es_ES": {
+        "trainer_nav": "Trainers",
+        "trainer_title": "Trainers de Juegos",
+        "trainer_search_placeholder": "Buscar trainers (nombre del juego)...",
+        "trainer_search_btn": "Buscar",
+        "trainer_installed_title": "Trainers Instalados",
+        "trainer_search_results": "Resultados de Búsqueda",
+        "trainer_download_btn": "Descargar",
+        "trainer_launch_btn": "Iniciar",
+        "trainer_delete_btn": "Eliminar",
+        "trainer_refresh_btn": "Actualizar",
+        "trainer_open_folder": "Abrir Carpeta",
+        "trainer_no_installed": "No hay trainers instalados",
+        "trainer_no_results": "No se encontraron trainers",
+        "trainer_searching": "Buscando...",
+        "trainer_downloading": "Descargando...",
+        "trainer_download_success": "Descarga exitosa",
+        "trainer_download_failed": "Descarga fallida",
+        "trainer_launch_failed": "Inicio fallido",
+        "trainer_delete_confirm": "Confirmar Eliminación",
+        "trainer_delete_confirm_msg": "¿Estás seguro de que deseas eliminar {0}?",
+        "trainer_deleted": "Eliminado",
+        "trainer_db_missing": "Base de Datos GCM No Encontrada",
+        "trainer_db_missing_hint": "Por favor instala y ejecuta Game Cheats Manager para descargar la base de datos de trainers, o busca directamente (requiere internet)",
+        "trainer_version": "Versión",
+        "trainer_source": "Fuente",
+        "trainer_log": "Registro de Operaciones",
+        "trainer_clear_log": "Borrar Registro",
+        "trainer_already_exists": "El trainer ya existe",
+        "trainer_open_gcm": "Abrir GCM",
+        "trainer_progress": "Progreso de Descarga",
+    },
+    "ko_KR": {
+        "trainer_nav": "트레이너",
+        "trainer_title": "게임 트레이너",
+        "trainer_search_placeholder": "트레이너 검색 (게임 이름)...",
+        "trainer_search_btn": "검색",
+        "trainer_installed_title": "설치된 트레이너",
+        "trainer_search_results": "검색 결과",
+        "trainer_download_btn": "다운로드",
+        "trainer_launch_btn": "실행",
+        "trainer_delete_btn": "삭제",
+        "trainer_refresh_btn": "새로고침",
+        "trainer_open_folder": "폴더 열기",
+        "trainer_no_installed": "설치된 트레이너가 없습니다",
+        "trainer_no_results": "트레이너를 찾을 수 없습니다",
+        "trainer_searching": "검색 중...",
+        "trainer_downloading": "다운로드 중...",
+        "trainer_download_success": "다운로드 성공",
+        "trainer_download_failed": "다운로드 실패",
+        "trainer_launch_failed": "실행 실패",
+        "trainer_delete_confirm": "삭제 확인",
+        "trainer_delete_confirm_msg": "{0}을(를) 삭제하시겠습니까?",
+        "trainer_deleted": "삭제됨",
+        "trainer_db_missing": "GCM 데이터베이스를 찾을 수 없음",
+        "trainer_db_missing_hint": "트레이너 데이터베이스를 다운로드하려면 Game Cheats Manager를 설치하고 실행하거나, 직접 검색하세요 (인터넷 필요)",
+        "trainer_version": "버전",
+        "trainer_source": "출처",
+        "trainer_log": "작업 로그",
+        "trainer_clear_log": "로그 지우기",
+        "trainer_already_exists": "트레이너가 이미 존재합니다",
+        "trainer_open_gcm": "GCM 열기",
+        "trainer_progress": "다운로드 진행률",
+    },
+}
+for _lang, _keys in _TRAINER_TEXTS.items():
+    if _lang in TEXTS:
+        TEXTS[_lang].update(_keys)
+for _lang in TEXTS:
+    if _lang not in _TRAINER_TEXTS:
+        TEXTS[_lang].update(_TRAINER_TEXTS["zh_CN"])
 
 # 全局语言变量
 current_language = "zh_CN"
@@ -2265,11 +2664,11 @@ class HomePage(ScrollArea):
         
         self.mainLayout.addWidget(self.card_container)
         self.mainLayout.addStretch(1)
-        
+
         # 设置透明背景
         self.setStyleSheet("HomePage { background: transparent; }")
         container.setStyleSheet("QWidget#homeContainer { background: transparent; }")
-        
+
         # 标记需要加载游戏列表
         self._games_loaded = False
         self.worker = None
@@ -2304,15 +2703,13 @@ class HomePage(ScrollArea):
         self.worker.start()
 
     def _load_missing_names(self, files_data):
-        """后台加载缺失的游戏名称和DLC信息，并行执行提高效率"""
+        """后台加载缺失的游戏名称"""
         async def _fetch():
             async with CaiBackend() as backend:
                 await backend.initialize()
-                # 同时获取名称和DLC信息（仅SteamTools游戏）
                 info_result = await backend.fetch_game_info_batch(
                     files_data, 
-                    get_steam_lang(current_language),
-                    fetch_dlc=True
+                    get_steam_lang(current_language)
                 )
                 return info_result
 
@@ -2323,12 +2720,11 @@ class HomePage(ScrollArea):
         self._name_worker.start()
 
     def _update_card_info(self, info_result):
-        """用后台加载的信息更新已显示的卡片（名称和DLC计数）"""
+        """用后台加载的信息更新已显示的卡片（仅名称）"""
         if not info_result:
             return
         
         name_map = info_result.get('names', {})
-        dlc_count_map = info_result.get('dlc_count', {})
         
         for card in self.game_cards:
             appid = getattr(card, 'appid', None)
@@ -2340,18 +2736,6 @@ class HomePage(ScrollArea):
                 name = name_map[appid]
                 if hasattr(card, 'titleLabel'):
                     card.titleLabel.setText(name)
-            
-            # 更新DLC计数（仅SteamTools游戏）
-            if appid in dlc_count_map and hasattr(card, 'source_type') and card.source_type == 'st':
-                dlc_count = dlc_count_map[appid]
-                # 如果有DLC，可以在卡片上显示DLC数量
-                if dlc_count > 0 and hasattr(card, 'infoLabel'):
-                    current_text = card.infoLabel.text()
-                    # 在原有信息后面添加DLC数量
-                    if '|' in current_text:
-                        base_text = current_text.split('|')[0].strip()
-                        source_text = current_text.split('|')[1].strip() if len(current_text.split('|')) > 1 else "SteamTools"
-                        card.infoLabel.setText(f"{base_text} | {source_text} | {dlc_count} DLC")
 
     
     def refresh_games(self):
@@ -2672,7 +3056,7 @@ class HomePage(ScrollArea):
     def _check_and_complete_manifest_after_toggle(self, appid):
         """切换固定版本后，检查并补全清单文件"""
         # 读取配置，判断修复模式
-        config_path = Path.cwd() / 'config.json'
+        config_path = APP_ROOT / 'config' / 'config.json'
         manifest_mode = "ask"  # 默认询问
         try:
             if config_path.exists():
@@ -2794,7 +3178,7 @@ class HomePage(ScrollArea):
     def save_view_mode_preference(self):
         """保存视图模式设置"""
         try:
-            config_path = Path.cwd() / 'config.json'
+            config_path = APP_ROOT / 'config' / 'config.json'
             import json
             
             # 读取现有配置
@@ -2802,7 +3186,7 @@ class HomePage(ScrollArea):
                 with open(config_path, 'r', encoding='utf-8') as f:
                     config = json.load(f)
             else:
-                from backend import DEFAULT_CONFIG
+                from cai_backend import DEFAULT_CONFIG
                 config = DEFAULT_CONFIG.copy()
             
             # 保存视图模式
@@ -2818,7 +3202,7 @@ class HomePage(ScrollArea):
         """从配置文件读取视图模式，不操作任何 UI"""
         try:
             import json
-            config_path = Path.cwd() / 'config.json'
+            config_path = APP_ROOT / 'config' / 'config.json'
             if config_path.exists():
                 with open(config_path, 'r', encoding='utf-8') as f:
                     return json.load(f).get(key, "grid")
@@ -2836,7 +3220,7 @@ class HomePage(ScrollArea):
             print(f"加载视图模式偏好失败: {e}")
         """保存排序模式设置"""
         try:
-            config_path = Path.cwd() / 'config.json'
+            config_path = APP_ROOT / 'config' / 'config.json'
             import json
             
             # 读取现有配置
@@ -2844,7 +3228,7 @@ class HomePage(ScrollArea):
                 with open(config_path, 'r', encoding='utf-8') as f:
                     config = json.load(f)
             else:
-                from backend import DEFAULT_CONFIG
+                from cai_backend import DEFAULT_CONFIG
                 config = DEFAULT_CONFIG.copy()
             
             # 保存排序模式
@@ -2865,7 +3249,7 @@ class HomePage(ScrollArea):
     def load_sort_mode_preference(self):
         """加载排序模式设置"""
         try:
-            config_path = Path.cwd() / 'config.json'
+            config_path = APP_ROOT / 'config' / 'config.json'
             import json
             
             if config_path.exists():
@@ -2892,7 +3276,7 @@ class HomePage(ScrollArea):
     def save_sort_mode_preference(self):
         """保存排序模式设置"""
         try:
-            config_path = Path.cwd() / 'config.json'
+            config_path = APP_ROOT / 'config' / 'config.json'
             import json
             
             # 读取现有配置
@@ -3346,16 +3730,16 @@ class SearchPage(ScrollArea):
         self.manifest_source_label.setStyleSheet("color: #000000;" if not isDarkTheme() else "color: #ffffff;")
         self.manifest_source_combo = ComboBox(self)
         self.manifest_source_combo.addItems([
-            "自动选择",
-            "SteamAutoCracks V2",
-            "SteamAutoCracks V1",
-            tr("sac-other"),
+            tr("auto_select"),
             "Cysaw",
             "Walftech",
             "Sudama",
             "清单不求人",
             tr("MHub"),
             tr("github_auiowu"),
+            "SteamAutoCracks V2",
+            "SteamAutoCracks V1",
+            tr("sac-other"),
         ])
         self.manifest_source_combo.setCurrentIndex(0)  # 默认自动选择
         self.manifest_source_combo.setFixedWidth(200)
@@ -3492,7 +3876,7 @@ class SearchPage(ScrollArea):
     def save_add_dlc_preference(self):
         """保存DLC选项状态"""
         try:
-            config_path = Path.cwd() / 'config.json'
+            config_path = APP_ROOT / 'config' / 'config.json'
             import json
             
             # 读取现有配置
@@ -3500,7 +3884,7 @@ class SearchPage(ScrollArea):
                 with open(config_path, 'r', encoding='utf-8') as f:
                     config = json.load(f)
             else:
-                from backend import DEFAULT_CONFIG
+                from cai_backend import DEFAULT_CONFIG
                 config = DEFAULT_CONFIG.copy()
             
             # 保存DLC选项状态
@@ -3515,7 +3899,7 @@ class SearchPage(ScrollArea):
     def load_add_dlc_preference(self):
         """加载DLC选项状态"""
         try:
-            config_path = Path.cwd() / 'config.json'
+            config_path = APP_ROOT / 'config' / 'config.json'
             import json
             
             # 读取配置
@@ -3533,7 +3917,7 @@ class SearchPage(ScrollArea):
     def save_patch_key_preference(self):
         """保存修补Key选项状态"""
         try:
-            config_path = Path.cwd() / 'config.json'
+            config_path = APP_ROOT / 'config' / 'config.json'
             import json
             
             # 读取现有配置
@@ -3541,7 +3925,7 @@ class SearchPage(ScrollArea):
                 with open(config_path, 'r', encoding='utf-8') as f:
                     config = json.load(f)
             else:
-                from backend import DEFAULT_CONFIG
+                from cai_backend import DEFAULT_CONFIG
                 config = DEFAULT_CONFIG.copy()
             
             # 保存修补Key选项状态
@@ -3556,7 +3940,7 @@ class SearchPage(ScrollArea):
     def load_patch_key_preference(self):
         """加载修补Key选项状态"""
         try:
-            config_path = Path.cwd() / 'config.json'
+            config_path = APP_ROOT / 'config' / 'config.json'
             import json
             
             # 读取配置
@@ -3649,7 +4033,7 @@ class SearchPage(ScrollArea):
         """检查是否应该显示进度条"""
         try:
             # 读取配置检查是否启用了进度条显示
-            config_path = Path.cwd() / 'config.json'
+            config_path = APP_ROOT / 'config' / 'config.json'
             if config_path.exists():
                 import json
                 with open(config_path, 'r', encoding='utf-8') as f:
@@ -3683,7 +4067,7 @@ class SearchPage(ScrollArea):
     def save_patch_manifest_preference(self):
         """保存修补Manifest选项状态"""
         try:
-            config_path = Path.cwd() / 'config.json'
+            config_path = APP_ROOT / 'config' / 'config.json'
             import json
             
             # 读取现有配置
@@ -3691,7 +4075,7 @@ class SearchPage(ScrollArea):
                 with open(config_path, 'r', encoding='utf-8') as f:
                     config = json.load(f)
             else:
-                from backend import DEFAULT_CONFIG
+                from cai_backend import DEFAULT_CONFIG
                 config = DEFAULT_CONFIG.copy()
             
             # 保存修补Manifest选项状态
@@ -3706,7 +4090,7 @@ class SearchPage(ScrollArea):
     def load_patch_manifest_preference(self):
         """加载修补Manifest选项状态"""
         try:
-            config_path = Path.cwd() / 'config.json'
+            config_path = APP_ROOT / 'config' / 'config.json'
             import json
             
             # 读取配置
@@ -3743,7 +4127,7 @@ class SearchPage(ScrollArea):
     def save_manifest_source_preference(self):
         """保存清单源选择偏好"""
         async def _save():
-            config_path = Path.cwd() / 'config.json'
+            config_path = APP_ROOT / 'config' / 'config.json'
             import json
             
             # 读取现有配置
@@ -3751,21 +4135,21 @@ class SearchPage(ScrollArea):
                 with open(config_path, 'r', encoding='utf-8') as f:
                     config = json.load(f)
             else:
-                from backend import DEFAULT_CONFIG
+                from cai_backend import DEFAULT_CONFIG
                 config = DEFAULT_CONFIG.copy()
             
             # 保存清单源选择
             source_mapping = {
                 0: "auto",
-                1: "steamautocracks_v2",
-                2: "steamautocracks_v1",
-                3: "sac-other",
-                4: "cysaw",
-                5: "walftech",
-                6: "sudama",
-                7: "buqiuren",
-                8: "MHub",
-                9: "github_auiowu",
+                1: "cysaw",
+                3: "walftech",
+                4: "sudama",
+                5: "buqiuren",
+                6: "MHub",
+                7: "github_auiowu",
+                8: "steamautocracks_v2",
+                9: "steamautocracks_v1",
+                10: "sac-other",
             }
             config["default_manifest_source"] = source_mapping.get(self.manifest_source_combo.currentIndex(), "auto")
             
@@ -3797,7 +4181,7 @@ class SearchPage(ScrollArea):
     def load_manifest_source_preference(self):
         """加载清单源选择偏好"""
         try:
-            config_path = Path.cwd() / 'config.json'
+            config_path = APP_ROOT / 'config' / 'config.json'
             import json
             
             # 读取配置
@@ -3806,20 +4190,20 @@ class SearchPage(ScrollArea):
                     config = json.load(f)
                 
                 # 获取保存的清单源
-                saved_source = config.get("default_manifest_source", "steamautocracks_v2")
+                saved_source = config.get("default_manifest_source", "auto")
                 
                 # 映射到combo索引
                 source_mapping = {
                     "auto": 0,
-                    "steamautocracks_v2": 1,
-                    "steamautocracks_v1": 2,
-                    "sac-other": 3,
-                    "cysaw": 4,
-                    "walftech": 6,
-                    "sudama": 7,
-                    "buqiuren": 8,
-                    "MHub": 9,
-                    "github_auiowu": 10,
+                    "cysaw": 1,
+                    "walftech": 3,
+                    "sudama": 4,
+                    "buqiuren": 5,
+                    "MHub": 6,
+                    "github_auiowu": 7,
+                    "steamautocracks_v2": 8,
+                    "steamautocracks_v1": 9,
+                    "sac-other": 10,
                 }
                 
                 index = source_mapping.get(saved_source, 0)
@@ -3834,7 +4218,7 @@ class SearchPage(ScrollArea):
     def save_view_mode_preference(self):
         """保存视图模式设置"""
         try:
-            config_path = Path.cwd() / 'config.json'
+            config_path = APP_ROOT / 'config' / 'config.json'
             import json
             
             # 读取现有配置
@@ -3842,7 +4226,7 @@ class SearchPage(ScrollArea):
                 with open(config_path, 'r', encoding='utf-8') as f:
                     config = json.load(f)
             else:
-                from backend import DEFAULT_CONFIG
+                from cai_backend import DEFAULT_CONFIG
                 config = DEFAULT_CONFIG.copy()
             
             # 保存视图模式
@@ -3858,7 +4242,7 @@ class SearchPage(ScrollArea):
         """从配置文件读取视图模式，不操作任何 UI"""
         try:
             import json
-            config_path = Path.cwd() / 'config.json'
+            config_path = APP_ROOT / 'config' / 'config.json'
             if config_path.exists():
                 with open(config_path, 'r', encoding='utf-8') as f:
                     return json.load(f).get(key, "grid")
@@ -3876,7 +4260,7 @@ class SearchPage(ScrollArea):
             print(f"加载视图模式偏好失败: {e}")
         """保存排序模式设置"""
         try:
-            config_path = Path.cwd() / 'config.json'
+            config_path = APP_ROOT / 'config' / 'config.json'
             import json
             
             # 读取现有配置
@@ -3884,7 +4268,7 @@ class SearchPage(ScrollArea):
                 with open(config_path, 'r', encoding='utf-8') as f:
                     config = json.load(f)
             else:
-                from backend import DEFAULT_CONFIG
+                from cai_backend import DEFAULT_CONFIG
                 config = DEFAULT_CONFIG.copy()
             
             # 保存排序模式
@@ -3905,7 +4289,7 @@ class SearchPage(ScrollArea):
     def load_sort_mode_preference(self):
         """加载排序模式设置"""
         try:
-            config_path = Path.cwd() / 'config.json'
+            config_path = APP_ROOT / 'config' / 'config.json'
             import json
             
             if config_path.exists():
@@ -4273,7 +4657,7 @@ class SearchPage(ScrollArea):
     def save_sort_mode_preference(self):
         """保存排序模式设置"""
         try:
-            config_path = Path.cwd() / 'config.json'
+            config_path = APP_ROOT / 'config' / 'config.json'
             import json
             
             # 读取现有配置
@@ -4346,15 +4730,15 @@ class SearchPage(ScrollArea):
         # 获取用户选择的清单源（用索引避免文本翻译不一致问题）
         index_to_source = {
             0: "auto",
-            1: "steamautocracks_v2",
-            2: "steamautocracks_v1",
-            3: "sac-other",
-            4: "cysaw",
-            6: "walftech",
-            7: "sudama",
-            8: "buqiuren",
-            9: "MHub",
-            10: "github_auiowu",
+            1: "cysaw",
+            3: "walftech",
+            4: "sudama",
+            5: "buqiuren",
+            6: "MHub",
+            7: "github_auiowu",
+            8: "steamautocracks_v2",
+            9: "steamautocracks_v1",
+            10: "sac-other",
         }
         tool_type = index_to_source.get(self.manifest_source_combo.currentIndex(), "auto")
         
@@ -4427,13 +4811,13 @@ class SearchPage(ScrollArea):
                 # 自动选择模式：依次尝试所有ZIP源
                 if tool_type_actual == "auto":
                     auto_sources = [
-                        "steamautocracks_v1",
-                        "sac-other",
                         "cysaw",
                         "walftech",
                         "sudama",
                         "buqiuren",
                         "MHub",
+                        "steamautocracks_v1",
+                        "sac-other",
                     ]
                     
                     # 更新进度条状态
@@ -4782,6 +5166,8 @@ class LauncherPage(ScrollArea):
         container = QWidget()
         container.setObjectName("launcherContainer")
         self.setWidget(container)
+        self.setStyleSheet("LauncherPage { background: transparent; }")
+        container.setStyleSheet("QWidget#launcherContainer { background: transparent; }")
 
         self.mainLayout = QVBoxLayout(container)
         self.mainLayout.setContentsMargins(30, 30, 30, 30)
@@ -4998,7 +5384,7 @@ class LauncherPage(ScrollArea):
         # 读取 Steam 路径
         steam_path = None
         try:
-            config_path = Path.cwd() / "config.json"
+            config_path = APP_ROOT / "config" / "config.json"
             if config_path.exists():
                 import json as _json
                 with open(config_path, "r", encoding="utf-8") as f:
@@ -5070,6 +5456,386 @@ class LauncherPage(ScrollArea):
             InfoBar.error(title=tr("launcher_error"), content=str(e), parent=self, position=InfoBarPosition.TOP)
 
 
+# ============================================================
+# 修改器页面
+# ============================================================
+
+class TrainerSearchWorker(QThread):
+    """修改器搜索工作线程"""
+    result_ready = pyqtSignal(list)
+    error = pyqtSignal(str)
+
+    def __init__(self, keyword: str):
+        super().__init__()
+        self.keyword = keyword
+        self._stop_flag = False
+
+    def stop(self):
+        """请求停止线程"""
+        self._stop_flag = True
+
+    def run(self):
+        try:
+            from backend.trainer_backend import search_trainers
+            results = search_trainers(self.keyword)
+            if not self._stop_flag:
+                self.result_ready.emit(results)
+        except Exception as e:
+            if not self._stop_flag:
+                self.error.emit(str(e))
+
+
+class TrainerDownloadWorker(QThread):
+    """修改器下载工作线程"""
+    progress = pyqtSignal(int, int)   # downloaded, total
+    log_msg = pyqtSignal(str)
+    finished = pyqtSignal(dict)       # result dict
+
+    def __init__(self, trainer: dict):
+        super().__init__()
+        self.trainer = trainer
+
+    def run(self):
+        try:
+            from backend.trainer_backend import download_trainer
+            result = download_trainer(
+                self.trainer,
+                progress_cb=lambda d, t: self.progress.emit(d, t),
+                log_cb=lambda m: self.log_msg.emit(m),
+            )
+            self.finished.emit(result)
+        except Exception as e:
+            self.finished.emit({"success": False, "path": "", "message": str(e)})
+
+
+class TrainerPage(ScrollArea):
+    """游戏修改器页面"""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setObjectName("trainerPage")
+        self.setWidgetResizable(True)
+
+        self._search_worker: Optional[TrainerSearchWorker] = None
+        self._download_worker: Optional[TrainerDownloadWorker] = None
+        self._search_results: list = []
+        self._installed: list = []
+
+        container = QWidget()
+        container.setObjectName("trainerContainer")
+        self.setWidget(container)
+        self.setStyleSheet("TrainerPage { background: transparent; }")
+        container.setStyleSheet("QWidget#trainerContainer { background: transparent; }")
+
+        main = QVBoxLayout(container)
+        main.setContentsMargins(30, 30, 30, 30)
+        main.setSpacing(16)
+
+        # 标题
+        header = QHBoxLayout()
+        header.addWidget(SubtitleLabel(tr("trainer_title"), self))
+        header.addStretch(1)
+        refresh_btn = TransparentToolButton(FluentIcon.SYNC, self)
+        refresh_btn.setToolTip(tr("trainer_refresh_btn"))
+        refresh_btn.clicked.connect(self._load_installed)
+        open_folder_btn = TransparentToolButton(FluentIcon.FOLDER, self)
+        open_folder_btn.setToolTip(tr("trainer_open_folder"))
+        open_folder_btn.clicked.connect(self._open_folder)
+        header.addWidget(refresh_btn)
+        header.addWidget(open_folder_btn)
+        main.addLayout(header)
+
+        # 搜索卡片
+        search_card = CardWidget(self)
+        search_layout = QVBoxLayout(search_card)
+        search_layout.setContentsMargins(20, 16, 20, 16)
+        search_layout.setSpacing(10)
+        search_layout.addWidget(BodyLabel(tr("trainer_search_results"), search_card))
+
+        search_row = QHBoxLayout()
+        self.search_input = SearchLineEdit(search_card)
+        self.search_input.setPlaceholderText(tr("trainer_search_placeholder"))
+        self.search_input.returnPressed.connect(self._on_search)
+        self.search_btn = PrimaryPushButton(tr("trainer_search_btn"), search_card)
+        self.search_btn.setIcon(FluentIcon.SEARCH)
+        self.search_btn.clicked.connect(self._on_search)
+        search_row.addWidget(self.search_input)
+        search_row.addWidget(self.search_btn)
+        search_layout.addLayout(search_row)
+
+        # 搜索结果列表
+        from qfluentwidgets import ListWidget
+        self.result_list = ListWidget(search_card)
+        self.result_list.setFixedHeight(200)
+        self.result_list.itemDoubleClicked.connect(self._on_download_selected)
+        search_layout.addWidget(self.result_list)
+
+        # 下载按钮行
+        dl_row = QHBoxLayout()
+        self.download_btn = PushButton(tr("trainer_download_btn"), search_card)
+        self.download_btn.setIcon(FluentIcon.DOWNLOAD)
+        self.download_btn.clicked.connect(self._on_download_selected)
+        self.download_btn.setEnabled(False)
+        self.result_list.currentRowChanged.connect(lambda i: self.download_btn.setEnabled(i >= 0))
+        dl_row.addStretch(1)
+        dl_row.addWidget(self.download_btn)
+        search_layout.addLayout(dl_row)
+
+        # 进度条
+        self.progress_bar = ProgressBar(search_card)
+        self.progress_bar.setRange(0, 100)
+        self.progress_bar.setValue(0)
+        self.progress_bar.setVisible(False)
+        search_layout.addWidget(self.progress_bar)
+
+        main.addWidget(search_card)
+
+        # 已安装修改器卡片
+        installed_card = CardWidget(self)
+        installed_layout = QVBoxLayout(installed_card)
+        installed_layout.setContentsMargins(20, 16, 20, 16)
+        installed_layout.setSpacing(10)
+        installed_layout.addWidget(BodyLabel(tr("trainer_installed_title"), installed_card))
+
+        self.installed_list = ListWidget(installed_card)
+        self.installed_list.setFixedHeight(200)
+        installed_layout.addWidget(self.installed_list)
+
+        btn_row = QHBoxLayout()
+        self.launch_btn = PrimaryPushButton(tr("trainer_launch_btn"), installed_card)
+        self.launch_btn.setIcon(FluentIcon.PLAY)
+        self.launch_btn.clicked.connect(self._on_launch)
+        self.launch_btn.setEnabled(False)
+        self.delete_btn = PushButton(tr("trainer_delete_btn"), installed_card)
+        self.delete_btn.setIcon(FluentIcon.DELETE)
+        self.delete_btn.clicked.connect(self._on_delete)
+        self.delete_btn.setEnabled(False)
+        self.installed_list.currentRowChanged.connect(self._on_installed_selection)
+        btn_row.addStretch(1)
+        btn_row.addWidget(self.launch_btn)
+        btn_row.addWidget(self.delete_btn)
+        installed_layout.addLayout(btn_row)
+        main.addWidget(installed_card)
+
+        # 日志卡片
+        log_card = CardWidget(self)
+        log_layout = QVBoxLayout(log_card)
+        log_layout.setContentsMargins(20, 16, 20, 16)
+        log_layout.setSpacing(8)
+        log_header = QHBoxLayout()
+        log_header.addWidget(BodyLabel(tr("trainer_log"), log_card))
+        log_header.addStretch(1)
+        clear_btn = TransparentToolButton(FluentIcon.DELETE, log_card)
+        clear_btn.setToolTip(tr("trainer_clear_log"))
+        clear_btn.clicked.connect(lambda: self.log_view.clear())
+        log_header.addWidget(clear_btn)
+        log_layout.addLayout(log_header)
+        self.log_view = TextEdit(log_card)
+        self.log_view.setReadOnly(True)
+        self.log_view.setFixedHeight(160)
+        log_layout.addWidget(self.log_view)
+        main.addWidget(log_card)
+        main.addStretch(1)
+
+        self._load_installed()
+        self._check_db()
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self._load_installed()
+
+    def _log(self, msg: str):
+        import time as _t
+        ts = _t.strftime("%H:%M:%S")
+        if isDarkTheme():
+            self.log_view.append(f"<span style='color:#888'>[{ts}]</span> <span style='color:#fff'>{msg}</span>")
+        else:
+            self.log_view.append(f"<span style='color:#666'>[{ts}]</span> <span style='color:#000'>{msg}</span>")
+        self.log_view.verticalScrollBar().setValue(self.log_view.verticalScrollBar().maximum())
+
+    def _check_db(self):
+        self._log("修改器功能已就绪，首次搜索会从 FLiNG 官网拉取列表（约 3-5 秒），之后 24h 内走本地缓存")
+
+    def _load_installed(self):
+        from backend.trainer_backend import list_installed_trainers
+        self._installed = list_installed_trainers()
+        self.installed_list.clear()
+        if not self._installed:
+            self.installed_list.addItem(tr("trainer_no_installed"))
+        else:
+            for t in self._installed:
+                ver = f"  [{t['version']}]" if t.get("version") else ""
+                self.installed_list.addItem(f"{t['name']}{ver}")
+        self.launch_btn.setEnabled(False)
+        self.delete_btn.setEnabled(False)
+
+    def _on_installed_selection(self, idx: int):
+        has = idx >= 0 and bool(self._installed)
+        self.launch_btn.setEnabled(has)
+        self.delete_btn.setEnabled(has)
+
+    def _open_folder(self):
+        from backend.trainer_backend import get_trainer_dir
+        path = get_trainer_dir()
+        os.makedirs(path, exist_ok=True)
+        os.startfile(path)
+
+    def _on_search(self):
+        keyword = self.search_input.text().strip()
+        if not keyword:
+            return
+        self.result_list.clear()
+        self.result_list.addItem(tr("trainer_searching"))
+        self.search_btn.setEnabled(False)
+        self.download_btn.setEnabled(False)
+        self._search_results = []
+
+        # 强制终止旧线程
+        old_worker = self._search_worker
+        self._search_worker = None
+        if old_worker is not None:
+            try:
+                if old_worker.isRunning():
+                    old_worker.stop()
+                    old_worker.terminate()
+                    old_worker.wait(500)
+                old_worker.deleteLater()
+            except RuntimeError:
+                pass
+
+        self._search_worker = TrainerSearchWorker(keyword)
+        self._search_worker.result_ready.connect(self._on_search_done)
+        self._search_worker.error.connect(self._on_search_error)
+        self._search_worker.finished.connect(self._on_worker_finished)
+        self._search_worker.start()
+
+    def _on_search_done(self, results: list):
+        self.search_btn.setEnabled(True)
+        self.result_list.clear()
+        self._search_results = results
+        if not results:
+            self.result_list.addItem(tr("trainer_no_results"))
+            self._log(tr("trainer_no_results"))
+        else:
+            for r in results:
+                ver = f"  [{r['version']}]" if r.get("version") else ""
+                self.result_list.addItem(f"{r['trainer_name']}{ver}")
+            self._log(f"找到 {len(results)} 个修改器")
+
+    def _on_search_error(self, err: str):
+        self.search_btn.setEnabled(True)
+        self.result_list.clear()
+        self.result_list.addItem(f"搜索失败: {err}")
+        self._log(f"❌ 搜索失败: {err}")
+
+    def _on_worker_finished(self):
+        """Worker完成后清理"""
+        if self._search_worker:
+            self._search_worker.deleteLater()
+            self._search_worker = None
+
+    def _on_download_selected(self):
+        idx = self.result_list.currentRow()
+        if idx < 0 or idx >= len(self._search_results):
+            return
+        trainer = self._search_results[idx]
+        if not trainer.get("url"):
+            InfoBar.warning(title="提示", content="该修改器暂无下载链接", parent=self, position=InfoBarPosition.TOP)
+            return
+
+        self.download_btn.setEnabled(False)
+        self.search_btn.setEnabled(False)
+        self.progress_bar.setVisible(True)
+        self.progress_bar.setValue(0)
+        self._log(f"开始下载: {trainer['trainer_name']}")
+
+        # 强制终止旧线程
+        old_worker = self._download_worker
+        self._download_worker = None
+        if old_worker is not None:
+            try:
+                if old_worker.isRunning():
+                    old_worker.terminate()
+                    old_worker.wait(500)
+                old_worker.deleteLater()
+            except RuntimeError:
+                pass
+
+        self._download_worker = TrainerDownloadWorker(trainer)
+        self._download_worker.progress.connect(self._on_download_progress)
+        self._download_worker.log_msg.connect(self._log)
+        self._download_worker.finished.connect(self._on_download_done)
+        self._download_worker.finished.connect(self._on_download_worker_finished)
+        self._download_worker.start()
+
+    def _on_download_progress(self, downloaded: int, total: int):
+        if total > 0:
+            pct = int(downloaded * 100 / total)
+            self.progress_bar.setValue(pct)
+
+    def _on_download_done(self, result: dict):
+        self.download_btn.setEnabled(True)
+        self.search_btn.setEnabled(True)
+        self.progress_bar.setVisible(False)
+        if result.get("success"):
+            InfoBar.success(
+                title=tr("trainer_download_success"),
+                content=result.get("message", ""),
+                parent=self,
+                position=InfoBarPosition.TOP,
+            )
+            self._load_installed()
+        else:
+            InfoBar.error(
+                title=tr("trainer_download_failed"),
+                content=result.get("message", ""),
+                parent=self,
+                position=InfoBarPosition.TOP,
+            )
+
+    def _on_download_worker_finished(self):
+        """下载Worker完成后清理"""
+        if self._download_worker:
+            self._download_worker.deleteLater()
+            self._download_worker = None
+
+    def _on_launch(self):
+        idx = self.installed_list.currentRow()
+        if idx < 0 or idx >= len(self._installed):
+            return
+        trainer = self._installed[idx]
+        from backend.trainer_backend import launch_trainer
+        ok = launch_trainer(trainer["exe"])
+        if ok:
+            self._log(f"✅ 已启动: {trainer['name']}")
+        else:
+            InfoBar.error(title=tr("trainer_launch_failed"), content=trainer["name"], parent=self, position=InfoBarPosition.TOP)
+
+    def _on_delete(self):
+        idx = self.installed_list.currentRow()
+        if idx < 0 or idx >= len(self._installed):
+            return
+        trainer = self._installed[idx]
+        dialog = MessageBox(
+            tr("trainer_delete_confirm"),
+            tr("trainer_delete_confirm_msg", trainer["name"]),
+            self,
+        )
+        if dialog.exec():
+            from backend.trainer_backend import delete_trainer
+            ok = delete_trainer(trainer["path"])
+            if ok:
+                self._log(f"🗑️ 已删除: {trainer['name']}")
+                self._load_installed()
+            else:
+                InfoBar.error(title="删除失败", content=trainer["name"], parent=self, position=InfoBarPosition.TOP)
+
+    def notify_theme_changed(self):
+        pass
+
+
+
+
 class SettingsPage(ScrollArea):
     """设置页面"""
     
@@ -5103,6 +5869,9 @@ class SettingsPage(ScrollArea):
         self.log_view = None
         self.default_page_combo = None
         self.show_progress_check = None
+        self.hide_search_check = None
+        self.hide_launcher_check = None
+        self.hide_trainer_check = None
 
         self._config_loaded = False
         self.worker = None
@@ -5226,7 +5995,26 @@ class SettingsPage(ScrollArea):
         self.show_progress_check = SwitchButton()
         self.show_progress_check.setChecked(True)
         # 注意：信号连接移到 _setup_auto_save_listeners，避免配置加载前触发保存
-        app_config_card.addGroup(FluentIcon.SYNC, "显示进度条", "在搜索和入库过程中显示进度条，提供更好的用户体验", self.show_progress_check)
+        app_config_card.addGroup(FluentIcon.SYNC, tr("show_progress_bar"), tr("show_progress_bar_hint"), self.show_progress_check)
+
+        # 侧栏显示设置（信号在 _setup_auto_save_listeners 中连接）
+        sidebar_group = GroupHeaderCardWidget(self)
+        sidebar_group.setTitle(tr("sidebar_settings"))
+        sidebar_group.setBorderRadius(8)
+
+        self.hide_search_check = SwitchButton()
+        self.hide_search_check.setChecked(False)
+        sidebar_group.addGroup(FluentIcon.SEARCH, tr("hide_search"), tr("hide_search_hint"), self.hide_search_check)
+
+        self.hide_launcher_check = SwitchButton()
+        self.hide_launcher_check.setChecked(False)
+        sidebar_group.addGroup(FluentIcon.GAME, tr("hide_launcher"), tr("hide_launcher_hint"), self.hide_launcher_check)
+
+        self.hide_trainer_check = SwitchButton()
+        self.hide_trainer_check.setChecked(False)
+        sidebar_group.addGroup(FluentIcon.LIBRARY, tr("hide_trainer"), tr("hide_trainer_hint"), self.hide_trainer_check)
+
+        layout.addWidget(sidebar_group)
 
         # 创建 DLC 超时时间设置（左边输入框，右边滑块）
         self.dlc_timeout_edit = LineEdit()
@@ -5441,6 +6229,9 @@ class SettingsPage(ScrollArea):
         self.github_btn = HyperlinkButton("https://github.com/zhouchentao666/Fluent-Install", "GitHub")
         self.github_btn.setFixedWidth(70)
         button_layout.addWidget(self.github_btn)
+        self.document_btn = HyperlinkButton("https://ocnxrkefvsx5.feishu.cn/wiki/LFpuweKKlidyTmkU2hKcW5qGnZc", "文档")
+        self.document_btn.setFixedWidth(70)
+        button_layout.addWidget(self.document_btn)
         self.qq_btn = HyperlinkButton("https://qm.qq.com/q/gtTLap5Jw4", "Q群")
         self.qq_btn.setFixedWidth(50)
         button_layout.addWidget(self.qq_btn)
@@ -5507,7 +6298,15 @@ class SettingsPage(ScrollArea):
         # 窗口特效
         if self.effect_combo:
             self.effect_combo.currentIndexChanged.connect(self._on_setting_changed)
-    
+
+        # 侧栏隐藏设置
+        if self.hide_search_check:
+            self.hide_search_check.checkedChanged.connect(self._on_setting_changed)
+        if self.hide_launcher_check:
+            self.hide_launcher_check.checkedChanged.connect(self._on_setting_changed)
+        if self.hide_trainer_check:
+            self.hide_trainer_check.checkedChanged.connect(self._on_setting_changed)
+
     def _on_setting_changed(self):
         """设置改变时立即保存"""
         self.save_settings()
@@ -5583,14 +6382,14 @@ class SettingsPage(ScrollArea):
     def save_theme_setting(self, key, value):
         """保存单个主题设置"""
         try:
-            config_path = Path.cwd() / 'config.json'
+            config_path = APP_ROOT / 'config' / 'config.json'
             import json
             
             if config_path.exists():
                 with open(config_path, 'r', encoding='utf-8') as f:
                     config = json.load(f)
             else:
-                from backend import DEFAULT_CONFIG
+                from cai_backend import DEFAULT_CONFIG
                 config = DEFAULT_CONFIG.copy()
             
             config[key] = value
@@ -5603,7 +6402,7 @@ class SettingsPage(ScrollArea):
     def load_theme_setting(self, key):
         """加载单个主题设置"""
         try:
-            config_path = Path.cwd() / 'config.json'
+            config_path = APP_ROOT / 'config' / 'config.json'
             if config_path.exists():
                 import json
                 with open(config_path, 'r', encoding='utf-8') as f:
@@ -5613,7 +6412,7 @@ class SettingsPage(ScrollArea):
             pass
         
         # 返回默认值
-        from backend import DEFAULT_CONFIG
+        from cai_backend import DEFAULT_CONFIG
         return DEFAULT_CONFIG.get(key)
     
     def on_language_changed(self, index):
@@ -5668,14 +6467,14 @@ class SettingsPage(ScrollArea):
     def save_language_setting(self, lang):
         """保存语言设置"""
         try:
-            config_path = Path.cwd() / 'config.json'
+            config_path = APP_ROOT / 'config' / 'config.json'
             import json
             
             if config_path.exists():
                 with open(config_path, 'r', encoding='utf-8') as f:
                     config = json.load(f)
             else:
-                from backend import DEFAULT_CONFIG
+                from cai_backend import DEFAULT_CONFIG
                 config = DEFAULT_CONFIG.copy()
             
             config["language"] = lang
@@ -5688,7 +6487,7 @@ class SettingsPage(ScrollArea):
     def load_language_setting(self):
         """加载语言设置"""
         try:
-            config_path = Path.cwd() / 'config.json'
+            config_path = APP_ROOT / 'config' / 'config.json'
             if config_path.exists():
                 import json
                 with open(config_path, 'r', encoding='utf-8') as f:
@@ -5845,6 +6644,7 @@ class SettingsPage(ScrollArea):
                 scroll.enableTransparentBackground()
 
                 inner = QWidget()
+                inner.setStyleSheet("background: transparent;")
                 inner_layout = QVBoxLayout(inner)
                 inner_layout.setContentsMargins(4, 4, 4, 4)
                 inner_layout.setSpacing(2)
@@ -5894,8 +6694,8 @@ class SettingsPage(ScrollArea):
         sections = [
             (
                 tr("donate_title"),
-                "https://pub-141831e61e69445289222976a15b6fb3.r2.dev/Image_to_url_V2/6188237576876003068_121-imagetourl.cloud-1774005511802-siuw87.jpg",
-                "https://pub-141831e61e69445289222976a15b6fb3.r2.dev/Image_to_url_V2/6188237576876003069_121-imagetourl.cloud-1774005513945-35nyye.jpg",
+                "https://camo.githubusercontent.com/04109c585ad05e20dcd31440afca895f1d79f27714ab16fe8e7a572df6c6f111/68747470733a2f2f7075622d31343138333165363165363934343532383932323239373661313562366662332e72322e6465762f496d6167655f746f5f75726c5f56322f363138383233373537363837363030333036385f3132312d696d616765746f75726c2e636c6f75642d313737343030353531313830322d7369757738372e6a7067",
+                "https://camo.githubusercontent.com/f8b910605f13a067d233bc5ceeee2601cd44d2939f7613c299e4007e2fe76cbf/68747470733a2f2f7075622d31343138333165363165363934343532383932323239373661313562366662332e72322e6465762f496d6167655f746f5f75726c5f56322f363138383233373537363837363030333036395f3132312d696d616765746f75726c2e636c6f75642d313737343030353531333934352d33356e7979652e6a7067",
             ),
             (
                 "赞助原项目作者及资源代码帮助",
@@ -5916,6 +6716,7 @@ class SettingsPage(ScrollArea):
                 scroll.enableTransparentBackground()
 
                 inner = QWidget()
+                inner.setStyleSheet("background: transparent;")
                 inner_layout = QVBoxLayout(inner)
                 inner_layout.setContentsMargins(4, 4, 4, 4)
                 inner_layout.setSpacing(20)
@@ -5995,12 +6796,12 @@ class SettingsPage(ScrollArea):
         """加载配置（同步读取本地文件，避免卡顿）"""
         try:
             import json as _json
-            config_path = Path.cwd() / 'config.json'
+            config_path = APP_ROOT / 'config' / 'config.json'
             if config_path.exists():
                 with open(config_path, 'r', encoding='utf-8') as f:
                     config = _json.load(f)
             else:
-                from backend import DEFAULT_CONFIG
+                from cai_backend import DEFAULT_CONFIG
                 config = DEFAULT_CONFIG.copy()
             self.on_config_loaded(config)
         except Exception as e:
@@ -6100,7 +6901,39 @@ class SettingsPage(ScrollArea):
                         pass
                     self.show_progress_check.setChecked(new_val)
                     self.show_progress_check.checkedChanged.connect(self._on_setting_changed)
-            
+
+            # 加载侧栏隐藏设置
+            if self.hide_search_check:
+                new_val = config.get("hide_search", False)
+                if self.hide_search_check.isChecked() != new_val:
+                    try:
+                        self.hide_search_check.checkedChanged.disconnect(self._on_setting_changed)
+                    except:
+                        pass
+                    self.hide_search_check.setChecked(new_val)
+                    self.hide_search_check.checkedChanged.connect(self._on_setting_changed)
+
+            if self.hide_launcher_check:
+                new_val = config.get("hide_launcher", False)
+                if self.hide_launcher_check.isChecked() != new_val:
+                    try:
+                        self.hide_launcher_check.checkedChanged.disconnect(self._on_setting_changed)
+                    except:
+                        pass
+                    self.hide_launcher_check.setChecked(new_val)
+                    self.hide_launcher_check.checkedChanged.connect(self._on_setting_changed)
+
+            if self.hide_trainer_check:
+                new_val = config.get("hide_trainer", False)
+                if self.hide_trainer_check.isChecked() != new_val:
+                    try:
+                        self.hide_trainer_check.checkedChanged.disconnect(self._on_setting_changed)
+                    except:
+                        pass
+                    self.hide_trainer_check.setChecked(new_val)
+                    self.hide_trainer_check.checkedChanged.connect(self._on_setting_changed)
+
+
             # 加载语言设置
             if self.lang_combo:
                 # 先断开信号连接，避免触发 on_language_changed
@@ -6195,7 +7028,7 @@ class SettingsPage(ScrollArea):
     def save_settings(self):
         """保存设置"""
         async def _save():
-            config_path = Path.cwd() / 'config.json'
+            config_path = APP_ROOT / 'config' / 'config.json'
             import json
             
             # 读取现有配置
@@ -6203,7 +7036,7 @@ class SettingsPage(ScrollArea):
                 with open(config_path, 'r', encoding='utf-8') as f:
                     config = json.load(f)
             else:
-                from backend import DEFAULT_CONFIG
+                from cai_backend import DEFAULT_CONFIG
                 config = DEFAULT_CONFIG.copy()
             
             # 更新配置
@@ -6245,7 +7078,14 @@ class SettingsPage(ScrollArea):
             # 保存显示进度条选项
             if self.show_progress_check:
                 config["show_progress_bar"] = self.show_progress_check.isChecked()
-            
+
+            # 保存侧栏隐藏设置
+            if self.hide_search_check:
+                config["hide_search"] = self.hide_search_check.isChecked()
+            if self.hide_launcher_check:
+                config["hide_launcher"] = self.hide_launcher_check.isChecked()
+            if self.hide_trainer_check:
+                config["hide_trainer"] = self.hide_trainer_check.isChecked()
             # 保存主题模式
             if self.theme_combo:
                 theme_mode_map = {0: "light", 1: "dark", 2: "auto"}
@@ -6311,8 +7151,8 @@ class SettingsPage(ScrollArea):
         
         if dialog.exec():
             async def _reset():
-                config_path = Path.cwd() / 'config.json'
-                from backend import DEFAULT_CONFIG
+                config_path = APP_ROOT / 'config' / 'config.json'
+                from cai_backend import DEFAULT_CONFIG
                 import json
                 
                 # 保留背景设置（如果有）
@@ -6371,44 +7211,82 @@ class SettingsPage(ScrollArea):
 
 
 
+def load_sidebar_config():
+    """加载侧栏显示配置"""
+    try:
+        config_path = APP_ROOT / 'config' / 'config.json'
+        if config_path.exists():
+            import json
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+            return {
+                "hide_search": config.get("hide_search", False),
+                "hide_launcher": config.get("hide_launcher", False),
+                "hide_trainer": config.get("hide_trainer", False),
+            }
+    except:
+        pass
+    return {
+        "hide_search": False,
+        "hide_launcher": False,
+        "hide_trainer": False,
+    }
+
+
 class MainWindow(MSFluentWindow):
     """主窗口"""
-    
+
     def __init__(self):
         super().__init__()
         self.setWindowTitle(tr("app_title") + f"  v{CURRENT_VERSION}")
         self.resize(1000, 700)
-        
+
         # 设置窗口图标为Fluent内置的下载图标
         self.setWindowIcon(FluentIcon.CLOUD_DOWNLOAD.icon())
-        
+
         # 设置标题栏（避免按钮重叠）
         self.titleBar.raise_()
-        
+
+        # 加载侧栏配置
+        sidebar_config = load_sidebar_config()
+
         # 创建页面
         self.home_page = HomePage(self)
         self.search_page = SearchPage(self)
         self.launcher_page = LauncherPage(self)
+        self.trainer_page = TrainerPage(self)
         self.settings_page = SettingsPage(self)
-        
+
         # 添加导航项
         self.addSubInterface(
             self.home_page,
             FluentIcon.HOME,
             tr("home")
         )
-        
-        self.addSubInterface(
-            self.search_page,
-            FluentIcon.SEARCH,
-            tr("search")
-        )
 
-        self.addSubInterface(
-            self.launcher_page,
-            FluentIcon.GAME,
-            tr("launcher")
-        )
+        # 根据配置显示/隐藏搜索入库
+        if not sidebar_config["hide_search"]:
+            self.addSubInterface(
+                self.search_page,
+                FluentIcon.SEARCH,
+                tr("search")
+            )
+
+        # 根据配置显示/隐藏联机游戏
+        if not sidebar_config["hide_launcher"]:
+            self.addSubInterface(
+                self.launcher_page,
+                FluentIcon.GAME,
+                tr("launcher")
+            )
+
+        # 根据配置显示/隐藏修改器
+        if not sidebar_config["hide_trainer"]:
+            self.addSubInterface(
+                self.trainer_page,
+                FluentIcon.LIBRARY,
+                tr("trainer_nav")
+            )
         
         # 在导航栏底部添加设置
         self.addSubInterface(
@@ -6431,14 +7309,14 @@ class MainWindow(MSFluentWindow):
         # 设置窗口效果
         # navigationInterface 在 MSFluentWindow 中已经配置好了
         # 不需要手动设置宽度
-        
+
         # 设置透明背景
         self.setStyleSheet("""
             MSFluentWindow {
                 background: transparent;
             }
         """)
-        
+
         # 根据配置切换到默认界面
         self.switch_to_default_page()
 
@@ -6449,21 +7327,24 @@ class MainWindow(MSFluentWindow):
     def switch_to_default_page(self):
         """切换到默认界面"""
         try:
-            config_path = Path.cwd() / 'config.json'
+            config_path = APP_ROOT / 'config' / 'config.json'
             if config_path.exists():
                 import json
                 with open(config_path, 'r', encoding='utf-8') as f:
                     config = json.load(f)
                 default_page = config.get("default_page", "home")
+                # 检查侧栏隐藏设置
+                hide_search = config.get("hide_search", False)
             else:
                 default_page = "home"
-            
+                hide_search = False
+
             # 切换到对应的界面
-            if default_page == "search":
+            if default_page == "search" and not hide_search:
                 self.switchTo(self.search_page)
             else:
                 self.switchTo(self.home_page)
-                
+
         except Exception:
             # 出错时默认显示主页
             self.switchTo(self.home_page)
@@ -6540,19 +7421,18 @@ class MainWindow(MSFluentWindow):
         import platform
         if platform.system() != 'Windows':
             return
-        
+
         if effect_type == "mica":
             # 启用云母特效（仅Windows 11）
             self.setMicaEffectEnabled(True)
-            self.setStyleSheet("background-color: transparent")
+            # 不设置全局透明背景，避免标题栏出现问题
         elif effect_type == "none":
             # 禁用特效
             self.setMicaEffectEnabled(False)
-            self.setStyleSheet("")
         
         # 保存设置
         try:
-            config_path = Path.cwd() / 'config.json'
+            config_path = APP_ROOT / 'config' / 'config.json'
             import json
             
             if config_path.exists():
@@ -6575,6 +7455,7 @@ class MainWindow(MSFluentWindow):
             self.home_page,
             self.search_page, 
             self.launcher_page,
+            self.trainer_page,
             self.settings_page
         ]
         
@@ -6674,7 +7555,7 @@ def main():
     
     # 加载并应用窗口特效
     try:
-        config_path = Path.cwd() / 'config.json'
+        config_path = APP_ROOT / 'config' / 'config.json'
         if config_path.exists():
             import json
             with open(config_path, 'r', encoding='utf-8') as f:
@@ -6691,3 +7572,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
