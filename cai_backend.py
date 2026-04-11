@@ -2035,76 +2035,6 @@ class CaiBackend:
             if extract_path.exists():
                 shutil.rmtree(extract_path, ignore_errors=True)
 
-    async def _process_gmrc_manifest(self, app_id: str, unlocker_type: str, use_st_auto_update: bool, add_all_dlc: bool, patch_depot_key: bool) -> bool:
-        """处理 gmrc 清单下载（gmrc.wudrm.com，按 manifest ID 逐个下载）"""
-        self.log.info(f"正从 GMRC 处理 AppID {app_id} 的清单...")
-        try:
-            # 1. 获取 depot/manifest 映射
-            depot_manifest_map = await self._get_depots_and_manifests(app_id)
-            if not depot_manifest_map:
-                self.log.warning(f"GMRC: 未能获取 AppID {app_id} 的 depot 信息")
-                return False
-
-            self.log.info(f"GMRC: 获取到 {len(depot_manifest_map)} 个 depot")
-
-            # 2. 逐个下载 manifest 文件
-            success_count = 0
-            depotcache_paths = [
-                self.steam_path / 'config' / 'depotcache',
-                self.steam_path / 'depotcache',
-            ]
-            for p in depotcache_paths:
-                p.mkdir(parents=True, exist_ok=True)
-
-            for depot_id, manifest_id in depot_manifest_map.items():
-                url = f"http://gmrc.wudrm.com/manifest/{manifest_id}"
-                try:
-                    resp = await self.client.get(url, timeout=30, follow_redirects=True)
-                    if resp.status_code == 404:
-                        self.log.warning(f"GMRC: manifest {manifest_id} 未找到 (404)")
-                        continue
-                    if resp.status_code != 200:
-                        self.log.warning(f"GMRC: manifest {manifest_id} 下载失败，状态码 {resp.status_code}")
-                        continue
-                    content = resp.content
-                    filename = f"{depot_id}_{manifest_id}.manifest"
-                    for p in depotcache_paths:
-                        (p / filename).write_bytes(content)
-                    self.log.info(f"GMRC: 已下载 {filename}")
-                    success_count += 1
-                except Exception as e:
-                    self.log.warning(f"GMRC: 下载 manifest {manifest_id} 失败: {e}")
-
-            if success_count == 0:
-                self.log.error(f"GMRC: AppID {app_id} 没有成功下载任何清单")
-                return False
-
-            # 3. 生成 lua 文件（SteamTools）
-            if unlocker_type == "steamtools":
-                stplug_path = self.steam_path / 'config' / 'stplug-in'
-                stplug_path.mkdir(parents=True, exist_ok=True)
-                lua_filepath = stplug_path / f"{app_id}.lua"
-                async with aiofiles.open(lua_filepath, mode="w", encoding="utf-8") as f:
-                    await f.write(f'addappid({app_id})\n')
-                    for depot_id, manifest_id in depot_manifest_map.items():
-                        line = f'setManifestid({depot_id}, "{manifest_id}")\n'
-                        await f.write('--' + line if use_st_auto_update else line)
-                self.log.info(f"GMRC: 已生成 {app_id}.lua")
-                if add_all_dlc:
-                    await self._add_free_dlcs_to_lua(app_id, lua_filepath)
-                if patch_depot_key:
-                    await self.patch_lua_with_depotkey(app_id, lua_filepath)
-            else:
-                all_depots = {}
-                if all_depots:
-                    await self.depotkey_merge(self.steam_path / 'config' / 'config.vdf', {'depots': all_depots})
-
-            self.log.info(f"GMRC: 成功处理 AppID {app_id}，下载了 {success_count} 个清单")
-            return True
-        except Exception as e:
-            self.log.error(f"处理 GMRC 清单时出错: {self.stack_error(e)}")
-            return False
-
     async def _process_mhub_manifest(self, app_id: str, unlocker_type: str, use_st_auto_update: bool, add_all_dlc: bool, patch_depot_key: bool) -> bool:
         """处理 MHub 清单下载（steamhub.156354.xyz）"""
         try:
@@ -3373,57 +3303,6 @@ class CaiBackend:
         return user_input if user_input.isdigit() else None
 
     async def find_appid_by_name(self, game_name: str, lang: str = "schinese") -> List[Dict]:
-        try:
-            self.log.info(f"正在尝试搜索游戏: {game_name}")
-
-            # 优先使用小黑盒+steam增强搜索
-            r = await self.client.get(
-                "https://api.9178666.xyz/steam",
-                params={'term': game_name, 'cc': 'cn'},
-                headers={
-                    "X-Client-Auth": "CaiGames-pvzcxw",
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                    "Accept": "application/json"
-                },
-                timeout=20
-            )
-            if r.status_code != 403:
-                r.raise_for_status()
-                resp_json = r.json()
-                raw_data = resp_json.get("data", []) if isinstance(resp_json, dict) and (resp_json.get("status") == "ok" or "data" in resp_json) else []
-                results = [{'appid': str(i.get('appid')), 'name': i.get('name'), 'header_image': i.get('image')} for i in raw_data if i.get('appid') and i.get('name')]
-                if results:
-                    self.log.info(f"小黑盒+steam增强搜索 成功找到 {len(results)} 个匹配结果")
-                    return results
-            else:
-                self.log.warning("小黑盒+steam增强搜索 返回 403，切换到 CaiGames API")
-        except Exception as e:
-            self.log.warning(f"小黑盒+steam增强搜索 失败，切换到 CaiGames API: {e}")
-
-        # 备用：CaiGames API
-        try:
-            r = await self.client.get(
-                "https://api.9178666.xyz/search",
-                params={'term': game_name},
-                headers={
-                    "X-Client-Auth": "CaiGames-pvzcxw",
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                    "Accept": "application/json"
-                },
-                timeout=20
-            )
-            if r.status_code != 403:
-                r.raise_for_status()
-                resp_json = r.json()
-                raw_data = resp_json.get("data", []) if isinstance(resp_json, dict) and (resp_json.get("status") == "ok" or "data" in resp_json) else []
-                results = [{'appid': str(i.get('appid')), 'name': i.get('name'), 'header_image': i.get('image')} for i in raw_data if i.get('appid') and i.get('name')]
-                if results:
-                    self.log.info(f"CaiGames API 成功找到 {len(results)} 个匹配结果")
-                    return results
-            else:
-                self.log.warning("CaiGames API 返回 403，切换到 Steam 搜索")
-        except Exception as e:
-            self.log.warning(f"CaiGames API 搜索失败，切换到 Steam 搜索: {e}")
 
         # 备用：Steam 商店搜索
         try:
