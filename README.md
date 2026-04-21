@@ -1,8 +1,14 @@
 # Fluent Install
 
+文档：https://zhouchentao666.github.io/Fluent-Install/
+
+英文文档：https://zhouchentao666.github.io/Fluent-Install/en/
+
+繁中文档：https://zhouchentao666.github.io/Fluent-Install/zh-tw/
+
 [English Version](./README_EN.md)
 
-一个基于 Fluent Design 的现代化安装工具，提供美观的用户界面和便捷的操作体验。支持多语言、主题定制、自定义仓库等高级功能。
+一个基于 Fluent Design 的现代化steamtools入库工具，提供美观的用户界面和便捷的操作体验。支持多语言、主题定制、自定义仓库等高级功能。
 
 ## 🌟 项目亮点
 
@@ -14,12 +20,12 @@
 - **一键操作**: 简化的安装流程，一键完成依赖安装和程序启动
 
 ## 📸 截图展示
+<img width="1250" height="875" alt="image" src="https://github.com/user-attachments/assets/d6684ad1-8189-487f-b345-ecda480be591" />
+<img width="1250" height="875" alt="image" src="https://github.com/user-attachments/assets/75aa317f-21b0-409d-9b5b-09bf5e36e0dd" />
+<img width="1250" height="875" alt="image" src="https://github.com/user-attachments/assets/e7c2b744-0c3c-4484-a908-70ca761d0480" />
+<img width="1250" height="875" alt="image" src="https://github.com/user-attachments/assets/57becdc6-1570-47b8-9837-0b2260b85f63" />
+<img width="1250" height="875" alt="image" src="https://github.com/user-attachments/assets/df540d40-0e18-4d0a-ad26-2d977d8234c3" />
 
-![](https://pub-141831e61e69445289222976a15b6fb3.r2.dev/Image_to_url_V2/-----2026-03-15-142325-imagetourl.cloud-1773555817783-iu0hay.png)
-
-![](https://pub-141831e61e69445289222976a15b6fb3.r2.dev/Image_to_url_V2/-----2026-03-15-144111-imagetourl.cloud-1773556925932-gkvose.png)
-
-![https://pub-141831e61e69445289222976a15b6fb3.r2.dev/Image_to_url_V2/-----2026-03-08-205522-imagetourl.cloud-1772974647358-0kx1je.png](https://pub-141831e61e69445289222976a15b6fb3.r2.dev/Image_to_url_V2/-----2026-03-15-142325-imagetourl.cloud-1773555979061-852mv3.png)
 
 ## 社区与联系
 
